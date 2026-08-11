@@ -1,4 +1,7 @@
-# 🛡️ Cam & Microphone Blocker (CamMicBlocker)
+<p align="center">
+  <img src="assets/logo/cammicroblocker_logo.png" alt="CamMicroBlocker Logo" width="128" />
+  <h1 align="center">Cam &amp; Microphone Blocker</h1>
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20x64-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Platform Windows" />

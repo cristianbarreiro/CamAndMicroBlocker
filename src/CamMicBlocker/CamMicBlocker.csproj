@@ -6,12 +6,21 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>UI\Resources\Icons\app.ico</ApplicationIcon>
     <RootNamespace>CamMicBlocker</RootNamespace>
     <AssemblyName>CamMicBlocker</AssemblyName>
     <Version>1.0.0</Version>
     <Description>Camera and Microphone Blocker for Windows</Description>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- True Single-File Bundle Configuration (Includes WPF Native DLLs and Content) -->
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <IncludeNativeLibrariesForSelfContained>true</IncludeNativeLibrariesForSelfContained>
+    <IncludeAllContentForSelfContained>true</IncludeAllContentForSelfContained>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,6 +33,7 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Resource Include="UI\Resources\Icons\app.ico" />
   </ItemGroup>
 
 </Project>

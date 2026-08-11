@@ -8,6 +8,7 @@ namespace CamMicBlocker.UI.TrayIcon;
 
 /// <summary>
 /// Manages the system tray icon, context menu, and tooltip with localized labels.
+/// Renders distinct OPEN/UNLOCKED padlock vs CLOSED/LOCKED padlock icons in GDI+.
 /// </summary>
 public sealed class TrayIconManager : IDisposable
 {
@@ -43,10 +44,10 @@ public sealed class TrayIconManager : IDisposable
         _startupService = startupService;
         _languageService = languageService;
 
-        // Generate icons
-        _greenIcon = CreatePadlockIcon(Color.SeaGreen);
-        _redIcon = CreatePadlockIcon(Color.IndianRed);
-        _yellowIcon = CreatePadlockIcon(Color.Goldenrod);
+        // Generate icons: Green = Unlocked Padlock (Open), Red = Locked Padlock (Closed)
+        _greenIcon = CreatePadlockIcon(Color.SeaGreen, isLocked: false);
+        _redIcon = CreatePadlockIcon(Color.IndianRed, isLocked: true);
+        _yellowIcon = CreatePadlockIcon(Color.Goldenrod, isLocked: false);
 
         // Build context menu
         _contextMenu = new ContextMenuStrip();
@@ -164,7 +165,11 @@ public sealed class TrayIconManager : IDisposable
         }
     }
 
-    private static Icon CreatePadlockIcon(Color color)
+    /// <summary>
+    /// Creates a padlock icon in memory. If isLocked is false, renders an open/unlocked shackle.
+    /// Includes keyhole detail and proper GDI cleanup.
+    /// </summary>
+    private static Icon CreatePadlockIcon(Color color, bool isLocked)
     {
         using var bmp = new Bitmap(32, 32);
         using var g = Graphics.FromImage(bmp);
@@ -174,8 +179,28 @@ public sealed class TrayIconManager : IDisposable
         using var brush = new SolidBrush(color);
         using var pen = new Pen(color, 3);
 
+        // Padlock main body
         g.FillRectangle(brush, 6, 14, 20, 15);
-        g.DrawArc(pen, 9, 4, 14, 16, 180, 180);
+
+        // Keyhole detail (dark inner cutout)
+        using var darkBrush = new SolidBrush(Color.FromArgb(220, 20, 20, 20));
+        g.FillEllipse(darkBrush, 14, 18, 4, 4);
+        g.FillRectangle(darkBrush, 15, 21, 2, 4);
+
+        if (isLocked)
+        {
+            // Closed shackle (locked padlock)
+            g.DrawArc(pen, 9, 5, 14, 14, 180, 180);
+            g.DrawLine(pen, 9, 12, 9, 14);
+            g.DrawLine(pen, 23, 12, 23, 14);
+        }
+        else
+        {
+            // Open shackle (unlocked padlock): shifted up and unhooked on right side
+            g.DrawArc(pen, 9, 1, 14, 14, 180, 180);
+            g.DrawLine(pen, 9, 8, 9, 14);     // Attached on left side
+            g.DrawLine(pen, 23, 8, 23, 10);   // Open gap on right side!
+        }
 
         var hIcon = bmp.GetHicon();
         var tempIcon = Icon.FromHandle(hIcon);

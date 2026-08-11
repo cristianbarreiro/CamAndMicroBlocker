@@ -24,7 +24,7 @@
     <system:String x:Key="Camera">Cámara</system:String>
     <system:String x:Key="Microphone">Micrófono</system:String>
     <system:String x:Key="StatusBlocked">🔒 Bloqueado</system:String>
-    <system:String x:Key="StatusAllowed">✅ Permitido</system:String>
+    <system:String x:Key="StatusAllowed">🔓 Permitido</system:String>
     <system:String x:Key="DetectedDevices">Dispositivos de Hardware Detectados</system:String>
     <system:String x:Key="DeviceEnabled">HABILITADO</system:String>
     <system:String x:Key="DeviceDisabled">DESHABILITADO</system:String>
