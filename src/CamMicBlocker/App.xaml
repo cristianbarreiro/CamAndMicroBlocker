@@ -1,0 +1,10 @@
+<Application x:Class="CamMicBlocker.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <!-- 
+    ShutdownMode="OnExplicitShutdown" because this is a system tray app
+    with no main window. The app lifecycle is managed explicitly via
+    Application.Current.Shutdown() when the user clicks Exit.
+    -->
+</Application>

@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <RootNamespace>CamMicBlocker</RootNamespace>
+    <AssemblyName>CamMicBlocker</AssemblyName>
+    <Version>1.0.0</Version>
+    <Description>Camera and Microphone Blocker for Windows</Description>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog" Version="3.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="System.Management" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CamMicBlocker.Elevated\CamMicBlocker.Elevated.csproj" />
+  </ItemGroup>
+
+  <!-- Ensure CamMicBlocker.Elevated.exe is compiled and copied to OutDir during normal build -->
+  <Target Name="BuildElevatedHelper" AfterTargets="Build" Condition="'$(PublishDir)' == ''">
+    <Exec Command="dotnet build &quot;$(MSBuildThisFileDirectory)..\CamMicBlocker.Elevated\CamMicBlocker.Elevated.csproj&quot; -c $(Configuration) -o &quot;$(OutDir)&quot;" />
+  </Target>
+
+  <!-- Ensure CamMicBlocker.Elevated.exe is published alongside CamMicBlocker.exe during publish -->
+  <Target Name="PublishElevatedHelper" AfterTargets="Publish">
+    <Exec Command="dotnet publish &quot;$(MSBuildThisFileDirectory)..\CamMicBlocker.Elevated\CamMicBlocker.Elevated.csproj&quot; -c $(Configuration) -r win-x64 --self-contained -p:PublishSingleFile=true -o &quot;$(PublishDir)&quot;" />
+  </Target>
+
+</Project>

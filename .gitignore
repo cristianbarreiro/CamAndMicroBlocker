@@ -1,0 +1,27 @@
+# .NET build output
+bin/
+obj/
+out/
+
+# IDE
+.vs/
+*.user
+*.suo
+*.cache
+*.sln.docstates
+
+# NuGet
+*.nupkg
+packages/
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+publish/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Logs (local only)
+*.log
