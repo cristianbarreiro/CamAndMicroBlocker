@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Cam &amp; Microphone Blocker"
-        Height="580" Width="440"
+        Height="620" Width="440"
         WindowStartupLocation="CenterScreen"
         WindowStyle="None"
         AllowsTransparency="True"
@@ -12,6 +12,47 @@
         Closing="OnWindowClosing">
 
     <Window.Resources>
+        <!-- Custom Minimal Dark ScrollBar Style -->
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+            <Setter Property="Foreground" Value="#3E3E4E"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Width" Value="8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid x:Name="Bg" Background="Transparent" SnapsToDevicePixels="true">
+                            <Track x:Name="PART_Track" IsDirectionReversed="true">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static ScrollBar.PageUpCommand}" Focusable="False" Opacity="0" Width="0" Height="0"/>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb x:Name="Thumb">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="{x:Type Thumb}">
+                                                <Border x:Name="ThumbBorder" Background="#3E3E45" CornerRadius="4" Margin="1,0"/>
+                                                <ControlTemplate.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter TargetName="ThumbBorder" Property="Background" Value="#007ACC"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsDragging" Value="True">
+                                                        <Setter TargetName="ThumbBorder" Property="Background" Value="#005999"/>
+                                                    </Trigger>
+                                                </ControlTemplate.Triggers>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="{x:Static ScrollBar.PageDownCommand}" Focusable="False" Opacity="0" Width="0" Height="0"/>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- ToggleSwitch Style -->
         <Style x:Key="ToggleSwitchStyle" TargetType="CheckBox">
             <Setter Property="Foreground" Value="#FFFFFF"/>
@@ -181,6 +222,48 @@
                 <!-- Individual Controls Scroll Area -->
                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Margin="0,4,0,12">
                     <StackPanel>
+                        <!-- How Protection Works Info Card -->
+                        <Border Style="{StaticResource CardStyle}" Background="#1C1C1F" BorderBrush="#2D2D32" BorderThickness="1">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBlock Text="🛡️" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="How Protection Works" FontSize="13" FontWeight="SemiBold" Foreground="#EEEEEE"/>
+                                    </StackPanel>
+                                    <Border Grid.Column="1" Background="#0A2C4D" CornerRadius="4" Padding="6,2">
+                                        <TextBlock Text="Dual-Layer Security" FontSize="10" FontWeight="Bold" Foreground="#389BFF"/>
+                                    </Border>
+                                </Grid>
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Layer 1: AppPrivacy Policy -->
+                                    <Border Grid.Column="0" Background="#141416" CornerRadius="6" Padding="10" Margin="0,0,4,0">
+                                        <StackPanel>
+                                            <TextBlock Text="1. App Privacy Policy" FontSize="11" FontWeight="Bold" Foreground="#4CAF50"/>
+                                            <TextBlock Text="AppPrivacy Group Policy blocks Windows &amp; store app access." FontSize="10" Foreground="#AAAAAA" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Layer 2: PnP Hardware Driver -->
+                                    <Border Grid.Column="1" Background="#141416" CornerRadius="6" Padding="10" Margin="4,0,0,0">
+                                        <StackPanel>
+                                            <TextBlock Text="2. PnP Driver Level" FontSize="11" FontWeight="Bold" Foreground="#007ACC"/>
+                                            <TextBlock Text="CfgMgr32 disables physical hardware device nodes." FontSize="10" Foreground="#AAAAAA" TextWrapping="Wrap" Margin="0,3,0,0"/>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+
                         <!-- Camera Card -->
                         <Border Style="{StaticResource CardStyle}">
                             <Grid>
