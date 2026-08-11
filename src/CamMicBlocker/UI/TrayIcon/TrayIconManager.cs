@@ -63,8 +63,8 @@ public sealed class TrayIconManager : IDisposable
         // Generate menu item icons (Segoe MDL2 Assets)
         _showAppIcon = CreateMDL2Icon("\uE8A7", Color.White, 16);  // Window icon
         _hideAppIcon = CreateMDL2Icon("\uE921", Color.White, 16);  // ChromeMinimize icon
-        _lockIcon = CreateMDL2Icon("\uE72E", Color.White, 16);     // Lock icon
-        _unlockIcon = CreateMDL2Icon("\uEA3F", Color.White, 16);   // Unlock icon
+        _lockIcon = CreateMDL2Icon("\uE72E", Color.White, 16);     // Closed Lock icon
+        _unlockIcon = CreateMDL2Icon("\uE785", Color.White, 16);   // Open Lock icon
         _exitIcon = CreateMDL2Icon("\uE8BB", Color.White, 16);     // ChromeClose icon
 
         // Build context menu with Fluent Dark renderer
