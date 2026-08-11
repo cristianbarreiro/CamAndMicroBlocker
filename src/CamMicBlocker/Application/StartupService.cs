@@ -57,8 +57,8 @@ public sealed class StartupService
                 return false;
             }
 
-            // Quote the path to handle spaces/special characters
-            key.SetValue(AppName, $"\"{exePath}\"");
+            // Quote the path to handle spaces/special characters and include --minimized flag
+            key.SetValue(AppName, $"\"{exePath}\" --minimized");
             Log.Information("Startup enabled: {Path}", exePath);
             return true;
         }

@@ -24,7 +24,48 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
-        // Step 1: Single-instance check
+        bool isUnblockMode = e.Args.Any(arg =>
+            arg.Equals("--unblock-and-exit", StringComparison.OrdinalIgnoreCase) ||
+            arg.Equals("--uninstall-cleanup", StringComparison.OrdinalIgnoreCase) ||
+            arg.Equals("-u", StringComparison.OrdinalIgnoreCase));
+
+        bool isMinimizedMode = e.Args.Any(arg =>
+            arg.Equals("--minimized", StringComparison.OrdinalIgnoreCase) ||
+            arg.Equals("--autostart", StringComparison.OrdinalIgnoreCase) ||
+            arg.Equals("-m", StringComparison.OrdinalIgnoreCase));
+
+        // Step 1: Initialize Serilog logging
+        LoggingConfiguration.Initialize();
+
+        if (isUnblockMode)
+        {
+            Log.Information("App launched with --unblock-and-exit flag. Performing silent cleanup...");
+            try
+            {
+                var detector = new DeviceDetector();
+                var controller = new DeviceController();
+                var policy = new PolicyManager();
+                var store = new StateStore();
+                var service = new BlockingService(detector, controller, policy, store);
+                var startup = new StartupService();
+
+                service.UnblockAsync(BlockTarget.Both).GetAwaiter().GetResult();
+                startup.DisableStartup();
+                Log.Information("Cleanup completed successfully. Exiting.");
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to perform silent unblock during cleanup");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+                Shutdown(0);
+            }
+            return;
+        }
+
+        // Step 2: Single-instance check
         _singleInstanceMutex = new Mutex(true, @"Global\CamMicBlocker_SingleInstance", out bool createdNew);
         if (!createdNew)
         {
@@ -37,8 +78,6 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        // Step 2: Initialize Serilog logging
-        LoggingConfiguration.Initialize();
         Log.Information("[Startup 1/8] Single instance acquired and logging initialized");
 
         // Global exception handlers with structured CrashReporter dumps
@@ -132,8 +171,15 @@ public partial class App : System.Windows.Application
             var initialState = _blockingService.GetCurrentState();
             _trayIconManager.UpdateState(initialState);
 
-            // Step 10: Show main window on launch
-            ShowMainWindow();
+            // Step 10: Show main window on launch unless starting minimized
+            if (isMinimizedMode)
+            {
+                Log.Information("App launched with --minimized. Running in system tray.");
+            }
+            else
+            {
+                ShowMainWindow();
+            }
 
             Log.Information("=== [Startup Complete] Application ready. Effective Camera={Camera}, Mic={Mic} ===",
                 initialState.Camera.EffectiveStatus, initialState.Microphone.EffectiveStatus);
