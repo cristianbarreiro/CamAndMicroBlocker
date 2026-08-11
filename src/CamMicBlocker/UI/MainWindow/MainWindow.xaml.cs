@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Input;
 using System.Windows.Media;
 using CamMicBlocker.Application;
 using CamMicBlocker.Domain.Models;
@@ -76,6 +77,25 @@ public partial class MainWindow : Window
         {
             _isUpdatingUi = false;
         }
+    }
+
+    private void OnTitleBarMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (e.ChangedButton == MouseButton.Left)
+        {
+            DragMove();
+        }
+    }
+
+    private void OnMinimizeButtonClick(object sender, RoutedEventArgs e)
+    {
+        WindowState = WindowState.Minimized;
+    }
+
+    private void OnCloseButtonClick(object sender, RoutedEventArgs e)
+    {
+        Hide();
+        Log.Debug("MainWindow hidden to tray via custom close button");
     }
 
     private async void OnMasterToggleClick(object sender, RoutedEventArgs e)
