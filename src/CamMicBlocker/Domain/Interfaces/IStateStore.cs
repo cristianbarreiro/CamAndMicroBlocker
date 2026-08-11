@@ -28,4 +28,5 @@ public sealed class DesiredState
     public BlockStatus Camera { get; set; } = BlockStatus.Allowed;
     public BlockStatus Microphone { get; set; } = BlockStatus.Allowed;
     public bool StartWithWindows { get; set; } = false;
+    public string Language { get; set; } = "es";
 }

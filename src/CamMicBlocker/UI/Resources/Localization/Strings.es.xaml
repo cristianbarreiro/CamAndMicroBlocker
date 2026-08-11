@@ -1,0 +1,47 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <!-- App Title & Brand -->
+    <system:String x:Key="AppTitle">Bloqueador de Cámara y Micrófono</system:String>
+
+    <!-- Master Control -->
+    <system:String x:Key="MasterTitle">Escudo Principal (Ambos)</system:String>
+    <system:String x:Key="StatusChecking">Estado: Comprobando...</system:String>
+    <system:String x:Key="ProtectionActive">Protección activa (Ambos Bloqueados)</system:String>
+    <system:String x:Key="ProtectionInactive">Protección inactiva (Ambos Permitidos)</system:String>
+    <system:String x:Key="MixedState">Estado mixto</system:String>
+
+    <!-- How Protection Works Card -->
+    <system:String x:Key="HowProtectionWorks">Cómo Funciona la Protección</system:String>
+    <system:String x:Key="DualLayerSecurity">Seguridad de Doble Capa</system:String>
+    <system:String x:Key="Layer1Title">1. Política de Privacidad</system:String>
+    <system:String x:Key="Layer1Desc">La Directiva AppPrivacy bloquea el acceso a aplicaciones de Windows.</system:String>
+    <system:String x:Key="Layer2Title">2. Nivel de Controlador PnP</system:String>
+    <system:String x:Key="Layer2Desc">CfgMgr32 deshabilita los nodos físicos de hardware en el sistema.</system:String>
+
+    <!-- Devices -->
+    <system:String x:Key="Camera">Cámara</system:String>
+    <system:String x:Key="Microphone">Micrófono</system:String>
+    <system:String x:Key="StatusBlocked">🔒 Bloqueado</system:String>
+    <system:String x:Key="StatusAllowed">✅ Permitido</system:String>
+    <system:String x:Key="DetectedDevices">Dispositivos de Hardware Detectados</system:String>
+    <system:String x:Key="DeviceEnabled">HABILITADO</system:String>
+    <system:String x:Key="DeviceDisabled">DESHABILITADO</system:String>
+
+    <!-- Footer Controls -->
+    <system:String x:Key="StartWithWindows">Iniciar con Windows</system:String>
+    <system:String x:Key="HotkeyLabel">Atajo: Ctrl+Alt+B</system:String>
+    <system:String x:Key="LanguageLabel">Idioma:</system:String>
+
+    <!-- Tray Context Menu -->
+    <system:String x:Key="TrayShowApp">📱 Mostrar Aplicación</system:String>
+    <system:String x:Key="TrayLockBoth">🔒 Bloquear (Ambos)</system:String>
+    <system:String x:Key="TrayUnlockBoth">🔓 Desbloquear (Ambos)</system:String>
+    <system:String x:Key="TrayLockUnlock">🔒 Bloquear / Desbloquear</system:String>
+    <system:String x:Key="TrayExit">❌ Salir de la Aplicación</system:String>
+
+    <!-- Overlay Notifications -->
+    <system:String x:Key="NotifyBothBlocked">Cámara y Micrófono: BLOQUEADOS</system:String>
+    <system:String x:Key="NotifyBothAllowed">Cámara y Micrófono: PERMITIDOS</system:String>
+</ResourceDictionary>

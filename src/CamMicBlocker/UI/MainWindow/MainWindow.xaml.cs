@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using CamMicBlocker.Application;
@@ -17,18 +18,36 @@ public partial class MainWindow : Window
 
     private readonly BlockingService _blockingService;
     private readonly StartupService _startupService;
+    private readonly LanguageService _languageService;
     private bool _isUpdatingUi;
 
-    public MainWindow(BlockingService blockingService, StartupService startupService)
+    public MainWindow(BlockingService blockingService, StartupService startupService, LanguageService languageService)
     {
         InitializeComponent();
 
         _blockingService = blockingService;
         _startupService = startupService;
+        _languageService = languageService;
 
         StartupCheckBox.IsChecked = _startupService.IsStartupEnabled();
 
+        // Sync Language Radios with current language state
+        _isUpdatingUi = true;
+        try
+        {
+            if (_languageService.CurrentLanguage == "en")
+                LangEnRadio.IsChecked = true;
+            else
+                LangEsRadio.IsChecked = true;
+        }
+        finally
+        {
+            _isUpdatingUi = false;
+        }
+
         _blockingService.StateChanged += OnStateChanged;
+        _languageService.LanguageChanged += OnLanguageChanged;
+
         RefreshState();
     }
 
@@ -36,6 +55,11 @@ public partial class MainWindow : Window
     {
         var state = _blockingService.GetCurrentState();
         UpdateUiFromState(state);
+    }
+
+    private void OnLanguageChanged(string langCode)
+    {
+        Dispatcher.BeginInvoke(RefreshState);
     }
 
     private void OnStateChanged(BlockState state)
@@ -48,35 +72,52 @@ public partial class MainWindow : Window
         _isUpdatingUi = true;
         try
         {
+            var blockedStr = _languageService.GetString("StatusBlocked", "🔒 Blocked");
+            var allowedStr = _languageService.GetString("StatusAllowed", "✅ Allowed");
+
             // Camera
             bool cameraBlocked = state.Camera.EffectiveStatus == BlockStatus.Blocked;
             CameraToggle.IsChecked = cameraBlocked;
-            CameraStatusText.Text = cameraBlocked ? "🔒 Blocked" : "✅ Allowed";
+            CameraStatusText.Text = cameraBlocked ? blockedStr : allowedStr;
             CameraStatusText.Foreground = cameraBlocked ? Brushes.IndianRed : Brushes.LightGreen;
 
             // Microphone
             bool micBlocked = state.Microphone.EffectiveStatus == BlockStatus.Blocked;
             MicToggle.IsChecked = micBlocked;
-            MicStatusText.Text = micBlocked ? "🔒 Blocked" : "✅ Allowed";
+            MicStatusText.Text = micBlocked ? blockedStr : allowedStr;
             MicStatusText.Foreground = micBlocked ? Brushes.IndianRed : Brushes.LightGreen;
 
             // Master (Both)
             bool bothBlocked = state.AllBlocked;
             MasterToggle.IsChecked = bothBlocked;
             MasterStatusText.Text = bothBlocked
-                ? "Protection active (Both Blocked)"
+                ? _languageService.GetString("ProtectionActive", "Protection active (Both Blocked)")
                 : state.AllAllowed
-                    ? "Protection inactive (Both Allowed)"
-                    : "Mixed state";
+                    ? _languageService.GetString("ProtectionInactive", "Protection inactive (Both Allowed)")
+                    : _languageService.GetString("MixedState", "Mixed state");
 
             // Update detected devices list
+            var enabledStr = _languageService.GetString("DeviceEnabled", "ENABLED");
+            var disabledStr = _languageService.GetString("DeviceDisabled", "DISABLED");
             var devices = _blockingService.GetDetectedDevices();
-            DevicesListView.ItemsSource = devices.Select(d => new DeviceItemViewModel(d)).ToList();
+            DevicesListView.ItemsSource = devices.Select(d => new DeviceItemViewModel(d, enabledStr, disabledStr)).ToList();
         }
         finally
         {
             _isUpdatingUi = false;
         }
+    }
+
+    private void OnLangEsChecked(object sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingUi) return;
+        _languageService.SetLanguage("es");
+    }
+
+    private void OnLangEnChecked(object sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingUi) return;
+        _languageService.SetLanguage("en");
     }
 
     private void OnTitleBarMouseDown(object sender, MouseButtonEventArgs e)
@@ -161,7 +202,6 @@ public partial class MainWindow : Window
 
     private void OnWindowClosing(object sender, CancelEventArgs e)
     {
-        // Don't close the process — hide to system tray instead!
         e.Cancel = true;
         Hide();
         Log.Debug("MainWindow hidden to tray");
@@ -174,11 +214,11 @@ public partial class MainWindow : Window
         public string StatusText { get; }
         public System.Windows.Media.Brush StatusColor { get; }
 
-        public DeviceItemViewModel(DeviceInfo device)
+        public DeviceItemViewModel(DeviceInfo device, string enabledText, string disabledText)
         {
             FriendlyName = $"[{device.DeviceType}] {device.FriendlyName}";
             InstanceId = device.InstanceId;
-            StatusText = device.IsEnabled ? "ENABLED" : "DISABLED";
+            StatusText = device.IsEnabled ? enabledText : disabledText;
             StatusColor = device.IsEnabled ? Brushes.LightGreen : Brushes.IndianRed;
         }
     }

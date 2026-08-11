@@ -1,0 +1,47 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:system="clr-namespace:System;assembly=mscorlib">
+
+    <!-- App Title & Brand -->
+    <system:String x:Key="AppTitle">Cam &amp; Microphone Blocker</system:String>
+
+    <!-- Master Control -->
+    <system:String x:Key="MasterTitle">Master Shield (Both)</system:String>
+    <system:String x:Key="StatusChecking">Status: Checking...</system:String>
+    <system:String x:Key="ProtectionActive">Protection active (Both Blocked)</system:String>
+    <system:String x:Key="ProtectionInactive">Protection inactive (Both Allowed)</system:String>
+    <system:String x:Key="MixedState">Mixed state</system:String>
+
+    <!-- How Protection Works Card -->
+    <system:String x:Key="HowProtectionWorks">How Protection Works</system:String>
+    <system:String x:Key="DualLayerSecurity">Dual-Layer Security</system:String>
+    <system:String x:Key="Layer1Title">1. App Privacy Policy</system:String>
+    <system:String x:Key="Layer1Desc">AppPrivacy Group Policy blocks Windows &amp; store app access.</system:String>
+    <system:String x:Key="Layer2Title">2. PnP Driver Level</system:String>
+    <system:String x:Key="Layer2Desc">CfgMgr32 disables physical hardware device nodes.</system:String>
+
+    <!-- Devices -->
+    <system:String x:Key="Camera">Camera</system:String>
+    <system:String x:Key="Microphone">Microphone</system:String>
+    <system:String x:Key="StatusBlocked">🔒 Blocked</system:String>
+    <system:String x:Key="StatusAllowed">✅ Allowed</system:String>
+    <system:String x:Key="DetectedDevices">Detected Hardware Devices</system:String>
+    <system:String x:Key="DeviceEnabled">ENABLED</system:String>
+    <system:String x:Key="DeviceDisabled">DISABLED</system:String>
+
+    <!-- Footer Controls -->
+    <system:String x:Key="StartWithWindows">Start with Windows</system:String>
+    <system:String x:Key="HotkeyLabel">Hotkey: Ctrl+Alt+B</system:String>
+    <system:String x:Key="LanguageLabel">Language:</system:String>
+
+    <!-- Tray Context Menu -->
+    <system:String x:Key="TrayShowApp">📱 Show Application</system:String>
+    <system:String x:Key="TrayLockBoth">🔒 Lock (Both)</system:String>
+    <system:String x:Key="TrayUnlockBoth">🔓 Unlock (Both)</system:String>
+    <system:String x:Key="TrayLockUnlock">🔒 Lock / Unlock</system:String>
+    <system:String x:Key="TrayExit">❌ Exit Application</system:String>
+
+    <!-- Overlay Notifications -->
+    <system:String x:Key="NotifyBothBlocked">Camera &amp; Microphone: BLOCKED</system:String>
+    <system:String x:Key="NotifyBothAllowed">Camera &amp; Microphone: ALLOWED</system:String>
+</ResourceDictionary>

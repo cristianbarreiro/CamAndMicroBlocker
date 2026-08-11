@@ -7,7 +7,7 @@ using Serilog;
 namespace CamMicBlocker.UI.TrayIcon;
 
 /// <summary>
-/// Manages the system tray icon, context menu, and tooltip.
+/// Manages the system tray icon, context menu, and tooltip with localized labels.
 /// </summary>
 public sealed class TrayIconManager : IDisposable
 {
@@ -17,6 +17,7 @@ public sealed class TrayIconManager : IDisposable
     private readonly ContextMenuStrip _contextMenu;
     private readonly BlockingService _blockingService;
     private readonly StartupService _startupService;
+    private readonly LanguageService _languageService;
 
     // Menu items
     private readonly ToolStripMenuItem _showAppItem;
@@ -28,16 +29,19 @@ public sealed class TrayIconManager : IDisposable
     private Icon? _redIcon;
     private Icon? _yellowIcon;
 
+    private BlockState? _lastState;
+
     /// <summary>Fired when the user clicks Show Application.</summary>
     public event Action? ShowMainWindowRequested;
 
     /// <summary>Fired when the user clicks Exit Application.</summary>
     public event Action? ExitRequested;
 
-    public TrayIconManager(BlockingService blockingService, StartupService startupService)
+    public TrayIconManager(BlockingService blockingService, StartupService startupService, LanguageService languageService)
     {
         _blockingService = blockingService;
         _startupService = startupService;
+        _languageService = languageService;
 
         // Generate icons
         _greenIcon = CreatePadlockIcon(Color.SeaGreen);
@@ -48,7 +52,7 @@ public sealed class TrayIconManager : IDisposable
         _contextMenu = new ContextMenuStrip();
 
         // 1. Show Application
-        _showAppItem = new ToolStripMenuItem("📱 Show Application")
+        _showAppItem = new ToolStripMenuItem(_languageService.GetString("TrayShowApp", "📱 Show Application"))
         {
             Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold)
         };
@@ -56,14 +60,14 @@ public sealed class TrayIconManager : IDisposable
         _contextMenu.Items.Add(_showAppItem);
 
         // 2. Lock / Unlock (Toggle Both)
-        _toggleItem = new ToolStripMenuItem("🔒 Lock / Unlock");
+        _toggleItem = new ToolStripMenuItem(_languageService.GetString("TrayLockUnlock", "🔒 Lock / Unlock"));
         _toggleItem.Click += async (_, _) => await SafeExecuteAsync(() => _blockingService.ToggleAsync(BlockTarget.Both));
         _contextMenu.Items.Add(_toggleItem);
 
         _contextMenu.Items.Add(new ToolStripSeparator());
 
         // 3. Exit Application
-        _exitItem = new ToolStripMenuItem("❌ Exit Application");
+        _exitItem = new ToolStripMenuItem(_languageService.GetString("TrayExit", "❌ Exit Application"));
         _exitItem.Click += (_, _) => ExitRequested?.Invoke();
         _contextMenu.Items.Add(_exitItem);
 
@@ -71,7 +75,7 @@ public sealed class TrayIconManager : IDisposable
         _notifyIcon = new NotifyIcon
         {
             Icon = _greenIcon,
-            Text = "CamMicBlocker — Checking...",
+            Text = "CamMicBlocker",
             Visible = true,
             ContextMenuStrip = _contextMenu
         };
@@ -88,49 +92,56 @@ public sealed class TrayIconManager : IDisposable
         // Double click also opens application window
         _notifyIcon.DoubleClick += (_, _) => ShowMainWindowRequested?.Invoke();
 
-        // Listen for state changes
+        // Listen for state and language changes
         _blockingService.StateChanged += OnStateChanged;
+        _languageService.LanguageChanged += OnLanguageChanged;
 
         Log.Information("TrayIconManager initialized");
     }
 
-    /// <summary>
-    /// Updates the tray icon and menu based on the current state.
-    /// </summary>
     public void UpdateState(BlockState state)
     {
         OnStateChanged(state);
     }
 
+    private void OnLanguageChanged(string langCode)
+    {
+        _showAppItem.Text = _languageService.GetString("TrayShowApp", "📱 Show Application");
+        _exitItem.Text = _languageService.GetString("TrayExit", "❌ Exit Application");
+        
+        if (_lastState != null)
+        {
+            OnStateChanged(_lastState);
+        }
+    }
+
     private void OnStateChanged(BlockState state)
     {
-        // Update icon and tooltip
+        _lastState = state;
+
         if (state.AllBlocked)
         {
             _notifyIcon.Icon = _redIcon;
-            _notifyIcon.Text = "CamMicBlocker — Camera & Microphone: BLOCKED";
-            _toggleItem.Text = "🔓 Unlock (Both)";
+            _notifyIcon.Text = $"CamMicBlocker — {_languageService.GetString("NotifyBothBlocked", "Camera & Microphone: BLOCKED")}";
+            _toggleItem.Text = _languageService.GetString("TrayUnlockBoth", "🔓 Unlock (Both)");
         }
         else if (state.AllAllowed)
         {
             _notifyIcon.Icon = _greenIcon;
-            _notifyIcon.Text = "CamMicBlocker — Camera & Microphone: Allowed";
-            _toggleItem.Text = "🔒 Lock (Both)";
+            _notifyIcon.Text = $"CamMicBlocker — {_languageService.GetString("NotifyBothAllowed", "Camera & Microphone: ALLOWED")}";
+            _toggleItem.Text = _languageService.GetString("TrayLockBoth", "🔒 Lock (Both)");
         }
         else
         {
             _notifyIcon.Icon = _yellowIcon;
-            _notifyIcon.Text = "CamMicBlocker — Partial/Mixed state";
-            _toggleItem.Text = "🔒 Lock / Unlock";
+            _notifyIcon.Text = $"CamMicBlocker — {_languageService.GetString("MixedState", "Mixed state")}";
+            _toggleItem.Text = _languageService.GetString("TrayLockUnlock", "🔒 Lock / Unlock");
         }
 
         Log.Debug("Tray UI updated: Camera={CameraState}, Mic={MicState}",
             state.Camera.EffectiveStatus, state.Microphone.EffectiveStatus);
     }
 
-    /// <summary>
-    /// Shows a balloon notification from the tray icon.
-    /// </summary>
     public void ShowNotification(string title, string message, ToolTipIcon icon = ToolTipIcon.Info)
     {
         _notifyIcon.ShowBalloonTip(2000, title, message, icon);
@@ -153,9 +164,6 @@ public sealed class TrayIconManager : IDisposable
         }
     }
 
-    /// <summary>
-    /// Creates a padlock icon in memory with proper GDI cleanup.
-    /// </summary>
     private static Icon CreatePadlockIcon(Color color)
     {
         using var bmp = new Bitmap(32, 32);
@@ -166,9 +174,7 @@ public sealed class TrayIconManager : IDisposable
         using var brush = new SolidBrush(color);
         using var pen = new Pen(color, 3);
 
-        // Padlock body
         g.FillRectangle(brush, 6, 14, 20, 15);
-        // Padlock shackle (arc)
         g.DrawArc(pen, 9, 4, 14, 16, 180, 180);
 
         var hIcon = bmp.GetHicon();
@@ -186,6 +192,7 @@ public sealed class TrayIconManager : IDisposable
     public void Dispose()
     {
         _blockingService.StateChanged -= OnStateChanged;
+        _languageService.LanguageChanged -= OnLanguageChanged;
 
         _notifyIcon.Visible = false;
         _notifyIcon.Dispose();

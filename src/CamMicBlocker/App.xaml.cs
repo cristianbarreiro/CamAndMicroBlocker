@@ -79,7 +79,7 @@ public partial class App : System.Windows.Application
             var stateStore = new StateStore();
 
             // Step 4: Instantiate application services
-            Log.Information("[Startup 3/8] Instantiating application services (BlockingService, StartupService)");
+            Log.Information("[Startup 3/8] Instantiating application services (BlockingService, StartupService, LanguageService)");
             _blockingService = new BlockingService(
                 deviceDetector,
                 deviceController,
@@ -87,10 +87,12 @@ public partial class App : System.Windows.Application
                 stateStore);
 
             var startupService = new StartupService();
+            var languageService = new LanguageService(stateStore);
+            languageService.Initialize();
 
             // Step 5: Instantiate main UI window
             Log.Information("[Startup 4/8] Instantiating MainWindow WPF UI");
-            _mainWindow = new UI.MainWindow.MainWindow(_blockingService, startupService);
+            _mainWindow = new UI.MainWindow.MainWindow(_blockingService, startupService, languageService);
 
             // Step 6: Wire state change event handlers
             Log.Information("[Startup 5/8] Wiring StateChanged notification handlers");
@@ -98,7 +100,7 @@ public partial class App : System.Windows.Application
 
             // Step 7: Create system tray icon and menu
             Log.Information("[Startup 6/8] Initializing TrayIconManager and context menu");
-            _trayIconManager = new TrayIconManager(_blockingService, startupService);
+            _trayIconManager = new TrayIconManager(_blockingService, startupService, languageService);
             _trayIconManager.ShowMainWindowRequested += ShowMainWindow;
             _trayIconManager.ExitRequested += () =>
             {
