@@ -13,14 +13,6 @@
     <Description>Camera and Microphone Blocker for Windows</Description>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-
-    <!-- True Single-File Bundle Configuration (Includes WPF Native DLLs and Content) -->
-    <PublishSingleFile>true</PublishSingleFile>
-    <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <IncludeNativeLibrariesForSelfContained>true</IncludeNativeLibrariesForSelfContained>
-    <IncludeAllContentForSelfContained>true</IncludeAllContentForSelfContained>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
   </PropertyGroup>
 
   <ItemGroup>

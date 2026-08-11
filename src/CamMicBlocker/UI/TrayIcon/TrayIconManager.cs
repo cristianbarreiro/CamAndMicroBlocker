@@ -22,6 +22,7 @@ public sealed class TrayIconManager : IDisposable
 
     // Menu items
     private readonly ToolStripMenuItem _showAppItem;
+    private readonly ToolStripMenuItem _hideAppItem;
     private readonly ToolStripMenuItem _toggleItem;
     private readonly ToolStripMenuItem _exitItem;
 
@@ -32,6 +33,7 @@ public sealed class TrayIconManager : IDisposable
 
     // Menu item icons (tracked for disposal)
     private Image? _showAppIcon;
+    private Image? _hideAppIcon;
     private Image? _lockIcon;
     private Image? _unlockIcon;
     private Image? _exitIcon;
@@ -40,6 +42,9 @@ public sealed class TrayIconManager : IDisposable
 
     /// <summary>Fired when the user clicks Show Application.</summary>
     public event Action? ShowMainWindowRequested;
+
+    /// <summary>Fired when the user clicks Hide Application.</summary>
+    public event Action? HideMainWindowRequested;
 
     /// <summary>Fired when the user clicks Exit Application.</summary>
     public event Action? ExitRequested;
@@ -57,6 +62,7 @@ public sealed class TrayIconManager : IDisposable
 
         // Generate menu item icons (Segoe MDL2 Assets)
         _showAppIcon = CreateMDL2Icon("\uE8A7", Color.White, 16);  // Window icon
+        _hideAppIcon = CreateMDL2Icon("\uE921", Color.White, 16);  // ChromeMinimize icon
         _lockIcon = CreateMDL2Icon("\uE72E", Color.White, 16);     // Lock icon
         _unlockIcon = CreateMDL2Icon("\uEA3F", Color.White, 16);   // Unlock icon
         _exitIcon = CreateMDL2Icon("\uE8BB", Color.White, 16);     // ChromeClose icon
@@ -65,7 +71,12 @@ public sealed class TrayIconManager : IDisposable
         _contextMenu = new ContextMenuStrip
         {
             Renderer = new FluentDarkRenderer(),
-            ImageScalingSize = new Size(16, 16)
+            ImageScalingSize = new Size(16, 16),
+            BackColor = Color.FromArgb(37, 37, 40), // #252528
+            ForeColor = Color.White,
+            Padding = new Padding(2),
+            ShowImageMargin = true,
+            ShowCheckMargin = false
         };
 
         // 1. Show Application
@@ -78,7 +89,19 @@ public sealed class TrayIconManager : IDisposable
         _showAppItem.Click += (_, _) => ShowMainWindowRequested?.Invoke();
         _contextMenu.Items.Add(_showAppItem);
 
-        // 2. Lock / Unlock (Toggle Both)
+        // 2. Hide Application
+        _hideAppItem = new ToolStripMenuItem
+        {
+            Text = _languageService.GetString("TrayHideApp", "Hide Application"),
+            Image = _hideAppIcon,
+            Font = new Font("Segoe UI", 9F, FontStyle.Regular)
+        };
+        _hideAppItem.Click += (_, _) => HideMainWindowRequested?.Invoke();
+        _contextMenu.Items.Add(_hideAppItem);
+
+        _contextMenu.Items.Add(new ToolStripSeparator());
+
+        // 3. Lock / Unlock (Toggle Both)
         _toggleItem = new ToolStripMenuItem
         {
             Text = _languageService.GetString("TrayLockUnlock", "Lock / Unlock"),
@@ -90,7 +113,7 @@ public sealed class TrayIconManager : IDisposable
 
         _contextMenu.Items.Add(new ToolStripSeparator());
 
-        // 3. Exit Application
+        // 4. Exit Application
         _exitItem = new ToolStripMenuItem
         {
             Text = _languageService.GetString("TrayExit", "Exit Application"),
@@ -136,6 +159,7 @@ public sealed class TrayIconManager : IDisposable
     private void OnLanguageChanged(string langCode)
     {
         _showAppItem.Text = _languageService.GetString("TrayShowApp", "Show Application");
+        _hideAppItem.Text = _languageService.GetString("TrayHideApp", "Hide Application");
         _exitItem.Text = _languageService.GetString("TrayExit", "Exit Application");
         
         if (_lastState != null)
@@ -295,10 +319,12 @@ public sealed class TrayIconManager : IDisposable
         _yellowIcon = null;
 
         _showAppIcon?.Dispose();
+        _hideAppIcon?.Dispose();
         _lockIcon?.Dispose();
         _unlockIcon?.Dispose();
         _exitIcon?.Dispose();
         _showAppIcon = null;
+        _hideAppIcon = null;
         _lockIcon = null;
         _unlockIcon = null;
         _exitIcon = null;

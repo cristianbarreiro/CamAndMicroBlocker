@@ -102,6 +102,7 @@ public partial class App : System.Windows.Application
             Log.Information("[Startup 6/8] Initializing TrayIconManager and context menu");
             _trayIconManager = new TrayIconManager(_blockingService, startupService, languageService);
             _trayIconManager.ShowMainWindowRequested += ShowMainWindow;
+            _trayIconManager.HideMainWindowRequested += HideMainWindow;
             _trayIconManager.ExitRequested += () =>
             {
                 Log.Information("Exit requested by user via tray menu");
@@ -163,6 +164,16 @@ public partial class App : System.Windows.Application
                 _mainWindow.WindowState = WindowState.Normal;
             _mainWindow.Activate();
             _mainWindow.RefreshState();
+        });
+    }
+
+    private void HideMainWindow()
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (_mainWindow == null) return;
+            Log.Debug("Hiding MainWindow");
+            _mainWindow.Hide();
         });
     }
 

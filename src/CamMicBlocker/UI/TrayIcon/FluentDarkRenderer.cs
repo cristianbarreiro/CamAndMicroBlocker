@@ -33,6 +33,13 @@ public sealed class FluentDarkRenderer : ToolStripProfessionalRenderer
         e.Graphics.FillPath(brush, path);
     }
 
+    protected override void OnRenderImageMargin(ToolStripRenderEventArgs e)
+    {
+        // Render image margin with dark background (no white strip)
+        using var brush = new SolidBrush(Color.FromArgb(37, 37, 40)); // #252528
+        e.Graphics.FillRectangle(brush, e.AffectedBounds);
+    }
+
     protected override void OnRenderSeparator(ToolStripSeparatorRenderEventArgs e)
     {
         // Render a thin, centered horizontal separator

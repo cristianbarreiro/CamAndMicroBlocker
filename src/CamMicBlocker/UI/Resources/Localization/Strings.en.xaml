@@ -36,6 +36,7 @@
 
     <!-- Tray Context Menu -->
     <system:String x:Key="TrayShowApp">Show Application</system:String>
+    <system:String x:Key="TrayHideApp">Hide Application</system:String>
     <system:String x:Key="TrayLockBoth">Lock (Both)</system:String>
     <system:String x:Key="TrayUnlockBoth">Unlock (Both)</system:String>
     <system:String x:Key="TrayLockUnlock">Lock / Unlock</system:String>
