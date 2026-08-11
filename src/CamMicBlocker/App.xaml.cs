@@ -72,17 +72,17 @@ public partial class App : System.Windows.Application
         try
         {
             // Step 3: Wire core infrastructure services
-            Log.Information("[Startup 2/8] Instantiating infrastructure services (DeviceDetector, PrivilegedClient, PolicyManager, StateStore)");
+            Log.Information("[Startup 2/8] Instantiating in-process infrastructure services (DeviceDetector, DeviceController, PolicyManager, StateStore)");
             var deviceDetector = new DeviceDetector();
-            var privilegedClient = new PrivilegedOperationClient();
-            var policyManager = new PolicyManager(privilegedClient);
+            var deviceController = new DeviceController();
+            var policyManager = new PolicyManager();
             var stateStore = new StateStore();
 
             // Step 4: Instantiate application services
             Log.Information("[Startup 3/8] Instantiating application services (BlockingService, StartupService)");
             _blockingService = new BlockingService(
                 deviceDetector,
-                privilegedClient,
+                deviceController,
                 policyManager,
                 stateStore);
 

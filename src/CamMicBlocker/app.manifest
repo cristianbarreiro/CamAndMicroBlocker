@@ -4,8 +4,9 @@
   <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
     <security>
       <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
-        <!-- Main UI app runs as the invoking user — NO admin required -->
-        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+        <!-- Prompts UAC ONCE when launching the main application.
+             All device PnP and registry operations execute in-process without subsequent UAC prompts. -->
+        <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
       </requestedPrivileges>
     </security>
   </trustInfo>

@@ -26,21 +26,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\CamMicBlocker.Elevated\CamMicBlocker.Elevated.csproj" />
-  </ItemGroup>
-
-  <!-- Copy Elevated Helper EXE to OutDir on normal Build -->
-  <Target Name="BuildElevatedHelper" AfterTargets="Build" Condition="'$(PublishDir)' == ''">
-    <Exec Command="dotnet build &quot;$(MSBuildThisFileDirectory)..\CamMicBlocker.Elevated\CamMicBlocker.Elevated.csproj&quot; -c $(Configuration) -o &quot;$(OutDir)&quot;" />
-  </Target>
-
-  <!-- Publish & Copy Elevated Helper EXE alongside CamMicBlocker.exe on Publish -->
-  <Target Name="PublishElevatedHelper" AfterTargets="Publish">
-    <Exec Command="dotnet publish &quot;$(MSBuildThisFileDirectory)..\CamMicBlocker.Elevated\CamMicBlocker.Elevated.csproj&quot; -c $(Configuration) -r win-x64 --self-contained -p:PublishSingleFile=true" />
-    <Copy SourceFiles="$(MSBuildThisFileDirectory)..\CamMicBlocker.Elevated\bin\$(Configuration)\net10.0-windows\win-x64\publish\CamMicBlocker.Elevated.exe"
-          DestinationFolder="$(PublishDir)"
-          SkipUnchangedFiles="true" />
-  </Target>
-
 </Project>
