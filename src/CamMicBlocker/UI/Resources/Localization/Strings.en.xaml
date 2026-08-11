@@ -35,11 +35,11 @@
     <system:String x:Key="LanguageLabel">Language:</system:String>
 
     <!-- Tray Context Menu -->
-    <system:String x:Key="TrayShowApp">📱 Show Application</system:String>
-    <system:String x:Key="TrayLockBoth">🔒 Lock (Both)</system:String>
-    <system:String x:Key="TrayUnlockBoth">🔓 Unlock (Both)</system:String>
-    <system:String x:Key="TrayLockUnlock">🔒 Lock / Unlock</system:String>
-    <system:String x:Key="TrayExit">❌ Exit Application</system:String>
+    <system:String x:Key="TrayShowApp">Show Application</system:String>
+    <system:String x:Key="TrayLockBoth">Lock (Both)</system:String>
+    <system:String x:Key="TrayUnlockBoth">Unlock (Both)</system:String>
+    <system:String x:Key="TrayLockUnlock">Lock / Unlock</system:String>
+    <system:String x:Key="TrayExit">Exit Application</system:String>
 
     <!-- Overlay Notifications -->
     <system:String x:Key="NotifyBothBlocked">Camera &amp; Microphone: BLOCKED</system:String>

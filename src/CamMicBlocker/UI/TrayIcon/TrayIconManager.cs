@@ -25,10 +25,16 @@ public sealed class TrayIconManager : IDisposable
     private readonly ToolStripMenuItem _toggleItem;
     private readonly ToolStripMenuItem _exitItem;
 
-    // Icons (tracked for disposal)
+    // Tray icons (tracked for disposal)
     private Icon? _greenIcon;
     private Icon? _redIcon;
     private Icon? _yellowIcon;
+
+    // Menu item icons (tracked for disposal)
+    private Image? _showAppIcon;
+    private Image? _lockIcon;
+    private Image? _unlockIcon;
+    private Image? _exitIcon;
 
     private BlockState? _lastState;
 
@@ -44,31 +50,53 @@ public sealed class TrayIconManager : IDisposable
         _startupService = startupService;
         _languageService = languageService;
 
-        // Generate icons: Green = Unlocked Padlock (Open), Red = Locked Padlock (Closed)
+        // Generate tray icons: Green = Unlocked Padlock (Open), Red = Locked Padlock (Closed)
         _greenIcon = CreatePadlockIcon(Color.SeaGreen, isLocked: false);
         _redIcon = CreatePadlockIcon(Color.IndianRed, isLocked: true);
         _yellowIcon = CreatePadlockIcon(Color.Goldenrod, isLocked: false);
 
-        // Build context menu
-        _contextMenu = new ContextMenuStrip();
+        // Generate menu item icons (Segoe MDL2 Assets)
+        _showAppIcon = CreateMDL2Icon("\uE8A7", Color.White, 16);  // Window icon
+        _lockIcon = CreateMDL2Icon("\uE72E", Color.White, 16);     // Lock icon
+        _unlockIcon = CreateMDL2Icon("\uEA3F", Color.White, 16);   // Unlock icon
+        _exitIcon = CreateMDL2Icon("\uE8BB", Color.White, 16);     // ChromeClose icon
+
+        // Build context menu with Fluent Dark renderer
+        _contextMenu = new ContextMenuStrip
+        {
+            Renderer = new FluentDarkRenderer(),
+            ImageScalingSize = new Size(16, 16)
+        };
 
         // 1. Show Application
-        _showAppItem = new ToolStripMenuItem(_languageService.GetString("TrayShowApp", "📱 Show Application"))
+        _showAppItem = new ToolStripMenuItem
         {
-            Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold)
+            Text = _languageService.GetString("TrayShowApp", "Show Application"),
+            Image = _showAppIcon,
+            Font = new Font("Segoe UI", 9F, FontStyle.Bold)
         };
         _showAppItem.Click += (_, _) => ShowMainWindowRequested?.Invoke();
         _contextMenu.Items.Add(_showAppItem);
 
         // 2. Lock / Unlock (Toggle Both)
-        _toggleItem = new ToolStripMenuItem(_languageService.GetString("TrayLockUnlock", "🔒 Lock / Unlock"));
+        _toggleItem = new ToolStripMenuItem
+        {
+            Text = _languageService.GetString("TrayLockUnlock", "Lock / Unlock"),
+            Image = _lockIcon,
+            Font = new Font("Segoe UI", 9F, FontStyle.Regular)
+        };
         _toggleItem.Click += async (_, _) => await SafeExecuteAsync(() => _blockingService.ToggleAsync(BlockTarget.Both));
         _contextMenu.Items.Add(_toggleItem);
 
         _contextMenu.Items.Add(new ToolStripSeparator());
 
         // 3. Exit Application
-        _exitItem = new ToolStripMenuItem(_languageService.GetString("TrayExit", "❌ Exit Application"));
+        _exitItem = new ToolStripMenuItem
+        {
+            Text = _languageService.GetString("TrayExit", "Exit Application"),
+            Image = _exitIcon,
+            Font = new Font("Segoe UI", 9F, FontStyle.Regular)
+        };
         _exitItem.Click += (_, _) => ExitRequested?.Invoke();
         _contextMenu.Items.Add(_exitItem);
 
@@ -107,8 +135,8 @@ public sealed class TrayIconManager : IDisposable
 
     private void OnLanguageChanged(string langCode)
     {
-        _showAppItem.Text = _languageService.GetString("TrayShowApp", "📱 Show Application");
-        _exitItem.Text = _languageService.GetString("TrayExit", "❌ Exit Application");
+        _showAppItem.Text = _languageService.GetString("TrayShowApp", "Show Application");
+        _exitItem.Text = _languageService.GetString("TrayExit", "Exit Application");
         
         if (_lastState != null)
         {
@@ -124,19 +152,22 @@ public sealed class TrayIconManager : IDisposable
         {
             _notifyIcon.Icon = _redIcon;
             _notifyIcon.Text = $"CamMicBlocker — {_languageService.GetString("NotifyBothBlocked", "Camera & Microphone: BLOCKED")}";
-            _toggleItem.Text = _languageService.GetString("TrayUnlockBoth", "🔓 Unlock (Both)");
+            _toggleItem.Text = _languageService.GetString("TrayUnlockBoth", "Unlock (Both)");
+            _toggleItem.Image = _unlockIcon;
         }
         else if (state.AllAllowed)
         {
             _notifyIcon.Icon = _greenIcon;
             _notifyIcon.Text = $"CamMicBlocker — {_languageService.GetString("NotifyBothAllowed", "Camera & Microphone: ALLOWED")}";
-            _toggleItem.Text = _languageService.GetString("TrayLockBoth", "🔒 Lock (Both)");
+            _toggleItem.Text = _languageService.GetString("TrayLockBoth", "Lock (Both)");
+            _toggleItem.Image = _lockIcon;
         }
         else
         {
             _notifyIcon.Icon = _yellowIcon;
             _notifyIcon.Text = $"CamMicBlocker — {_languageService.GetString("MixedState", "Mixed state")}";
-            _toggleItem.Text = _languageService.GetString("TrayLockUnlock", "🔒 Lock / Unlock");
+            _toggleItem.Text = _languageService.GetString("TrayLockUnlock", "Lock / Unlock");
+            _toggleItem.Image = _lockIcon;
         }
 
         Log.Debug("Tray UI updated: Camera={CameraState}, Mic={MicState}",
@@ -163,6 +194,39 @@ public sealed class TrayIconManager : IDisposable
             Log.Error(ex, "Error executing tray action");
             ShowNotification("CamMicBlocker", $"Error: {ex.Message}", ToolTipIcon.Error);
         }
+    }
+
+    /// <summary>
+    /// Creates a Segoe MDL2 Assets icon rendered as an image for use in ToolStripMenuItem.
+    /// Properly manages GDI resources.
+    /// </summary>
+    /// <param name="glyph">MDL2 glyph character (e.g., "\uE8A7" for Window)</param>
+    /// <param name="color">Icon color</param>
+    /// <param name="size">Icon size in pixels</param>
+    /// <returns>Rendered icon as Image</returns>
+    private static Image CreateMDL2Icon(string glyph, Color color, int size)
+    {
+        var bmp = new Bitmap(size, size);
+        using (var g = Graphics.FromImage(bmp))
+        {
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+            g.Clear(Color.Transparent);
+
+            using var font = new Font("Segoe MDL2 Assets", size * 0.75f, FontStyle.Regular, GraphicsUnit.Pixel);
+            using var brush = new SolidBrush(color);
+
+            // Center the glyph
+            var sf = new StringFormat
+            {
+                Alignment = StringAlignment.Center,
+                LineAlignment = StringAlignment.Center
+            };
+
+            g.DrawString(glyph, font, brush, size / 2f, size / 2f, sf);
+        }
+
+        return bmp;
     }
 
     /// <summary>
@@ -229,6 +293,15 @@ public sealed class TrayIconManager : IDisposable
         _greenIcon = null;
         _redIcon = null;
         _yellowIcon = null;
+
+        _showAppIcon?.Dispose();
+        _lockIcon?.Dispose();
+        _unlockIcon?.Dispose();
+        _exitIcon?.Dispose();
+        _showAppIcon = null;
+        _lockIcon = null;
+        _unlockIcon = null;
+        _exitIcon = null;
 
         Log.Debug("TrayIconManager disposed");
     }

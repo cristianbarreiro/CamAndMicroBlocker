@@ -35,11 +35,11 @@
     <system:String x:Key="LanguageLabel">Idioma:</system:String>
 
     <!-- Tray Context Menu -->
-    <system:String x:Key="TrayShowApp">📱 Mostrar Aplicación</system:String>
-    <system:String x:Key="TrayLockBoth">🔒 Bloquear (Ambos)</system:String>
-    <system:String x:Key="TrayUnlockBoth">🔓 Desbloquear (Ambos)</system:String>
-    <system:String x:Key="TrayLockUnlock">🔒 Bloquear / Desbloquear</system:String>
-    <system:String x:Key="TrayExit">❌ Salir de la Aplicación</system:String>
+    <system:String x:Key="TrayShowApp">Mostrar Aplicación</system:String>
+    <system:String x:Key="TrayLockBoth">Bloquear (Ambos)</system:String>
+    <system:String x:Key="TrayUnlockBoth">Desbloquear (Ambos)</system:String>
+    <system:String x:Key="TrayLockUnlock">Bloquear / Desbloquear</system:String>
+    <system:String x:Key="TrayExit">Salir de la Aplicación</system:String>
 
     <!-- Overlay Notifications -->
     <system:String x:Key="NotifyBothBlocked">Cámara y Micrófono: BLOQUEADOS</system:String>
