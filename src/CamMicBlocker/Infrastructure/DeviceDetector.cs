@@ -35,12 +35,15 @@ public sealed class DeviceDetector : IDeviceDetector
 
     public IReadOnlyList<DeviceInfo> DetectCameras()
     {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         Log.Debug("Detecting camera devices via ClassGuid {ClassGuid}", CameraClassGuid);
 
         var devices = QueryDevicesByClassGuid(CameraClassGuid, DeviceType.Camera);
 
-        Log.Information("Detected {Count} camera device(s): {Devices}",
+        sw.Stop();
+        Log.Information("Detected {Count} camera device(s) in {DurationMs}ms: {Devices}",
             devices.Count,
+            sw.ElapsedMilliseconds,
             string.Join(", ", devices.Select(d => $"{d.FriendlyName} [{d.InstanceId}]")));
 
         return devices;
@@ -48,21 +51,22 @@ public sealed class DeviceDetector : IDeviceDetector
 
     public IReadOnlyList<DeviceInfo> DetectMicrophones()
     {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
         Log.Debug("Detecting microphone devices via AudioEndpoint ClassGuid {ClassGuid}", AudioEndpointClassGuid);
 
         var allEndpoints = QueryDevicesByClassGuid(AudioEndpointClassGuid, DeviceType.Microphone);
 
-        // Filter to capture (input) endpoints only — exclude speakers/headphone output
         var microphones = allEndpoints
             .Where(d => IsCaptureEndpoint(d))
             .ToList();
 
-        Log.Information("Detected {Total} audio endpoint(s), {CaptureCount} are capture (microphone) endpoint(s): {Devices}",
+        sw.Stop();
+        Log.Information("Detected {Total} audio endpoint(s) in {DurationMs}ms, {CaptureCount} are capture (microphone) endpoint(s): {Devices}",
             allEndpoints.Count,
+            sw.ElapsedMilliseconds,
             microphones.Count,
             string.Join(", ", microphones.Select(d => $"{d.FriendlyName} [{d.InstanceId}]")));
 
-        // Log excluded render endpoints for debugging
         var excluded = allEndpoints.Except(microphones).ToList();
         if (excluded.Count > 0)
         {

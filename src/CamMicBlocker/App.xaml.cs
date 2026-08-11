@@ -11,15 +11,6 @@ namespace CamMicBlocker;
 
 /// <summary>
 /// Application entry point.
-/// 
-/// Responsibilities:
-/// 1. Single-instance enforcement (named Mutex)
-/// 2. Logging initialization
-/// 3. Service wiring (poor-man's DI — no container needed for this scale)
-/// 4. System tray setup
-/// 5. Hotkey registration
-/// 6. Initial state check
-/// 7. Graceful shutdown with resource cleanup
 /// </summary>
 public partial class App : System.Windows.Application
 {
@@ -27,12 +18,13 @@ public partial class App : System.Windows.Application
     private TrayIconManager? _trayIconManager;
     private HotkeyService? _hotkeyService;
     private BlockingService? _blockingService;
+    private UI.MainWindow.MainWindow? _mainWindow;
 
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
-        // 1. Single-instance check
+        // Step 1: Single-instance check
         _singleInstanceMutex = new Mutex(true, @"Global\CamMicBlocker_SingleInstance", out bool createdNew);
         if (!createdNew)
         {
@@ -45,37 +37,49 @@ public partial class App : System.Windows.Application
             return;
         }
 
-        // 2. Initialize logging
+        // Step 2: Initialize Serilog logging
         LoggingConfiguration.Initialize();
-        Log.Information("Application starting (single instance confirmed)");
+        Log.Information("[Startup 1/8] Single instance acquired and logging initialized");
 
-        // Set up global exception handlers
+        // Global exception handlers with structured CrashReporter dumps
         AppDomain.CurrentDomain.UnhandledException += (_, args) =>
         {
-            Log.Fatal(args.ExceptionObject as Exception, "Unhandled domain exception");
+            if (args.ExceptionObject is Exception ex)
+            {
+                var reportPath = CrashReporter.GenerateCrashReport(ex, "AppDomain.UnhandledException");
+                Log.Fatal(ex, "Unhandled domain exception. Crash report: {ReportPath}", reportPath);
+            }
             Log.CloseAndFlush();
         };
 
         DispatcherUnhandledException += (_, args) =>
         {
-            Log.Error(args.Exception, "Unhandled dispatcher exception");
-            args.Handled = true; // Don't crash the app for non-fatal errors
+            var reportPath = CrashReporter.GenerateCrashReport(args.Exception, "DispatcherUnhandledException");
+            Log.Error(args.Exception, "Unhandled dispatcher exception. Crash report: {ReportPath}", reportPath);
+            args.Handled = true; // Prevent crash for recoverable UI errors
         };
 
         TaskScheduler.UnobservedTaskException += (_, args) =>
         {
-            Log.Error(args.Exception, "Unobserved task exception");
+            if (args.Exception is Exception ex)
+            {
+                var reportPath = CrashReporter.GenerateCrashReport(ex, "TaskScheduler.UnobservedTaskException");
+                Log.Error(ex, "Unobserved task exception. Crash report: {ReportPath}", reportPath);
+            }
             args.SetObserved();
         };
 
         try
         {
-            // 3. Wire up services
+            // Step 3: Wire core infrastructure services
+            Log.Information("[Startup 2/8] Instantiating infrastructure services (DeviceDetector, PrivilegedClient, PolicyManager, StateStore)");
             var deviceDetector = new DeviceDetector();
             var privilegedClient = new PrivilegedOperationClient();
             var policyManager = new PolicyManager(privilegedClient);
             var stateStore = new StateStore();
 
+            // Step 4: Instantiate application services
+            Log.Information("[Startup 3/8] Instantiating application services (BlockingService, StartupService)");
             _blockingService = new BlockingService(
                 deviceDetector,
                 privilegedClient,
@@ -84,58 +88,86 @@ public partial class App : System.Windows.Application
 
             var startupService = new StartupService();
 
-            // 4. Wire up state change notifications
+            // Step 5: Instantiate main UI window
+            Log.Information("[Startup 4/8] Instantiating MainWindow WPF UI");
+            _mainWindow = new UI.MainWindow.MainWindow(_blockingService, startupService);
+
+            // Step 6: Wire state change event handlers
+            Log.Information("[Startup 5/8] Wiring StateChanged notification handlers");
             _blockingService.StateChanged += OnBlockStateChanged;
 
-            // 5. Create system tray
+            // Step 7: Create system tray icon and menu
+            Log.Information("[Startup 6/8] Initializing TrayIconManager and context menu");
             _trayIconManager = new TrayIconManager(_blockingService, startupService);
+            _trayIconManager.ShowMainWindowRequested += ShowMainWindow;
             _trayIconManager.ExitRequested += () =>
             {
-                Log.Information("Exit requested by user");
+                Log.Information("Exit requested by user via tray menu");
                 Shutdown();
             };
 
-            // 6. Register hotkey
+            // Step 8: Register global hotkey
+            Log.Information("[Startup 7/8] Registering global hotkey (Ctrl + Alt + B)");
             _hotkeyService = new HotkeyService();
             _hotkeyService.HotkeyPressed += async () =>
             {
-                Log.Debug("Hotkey triggered toggle");
+                Log.Debug("Global hotkey triggered state toggle");
                 await _blockingService.ToggleAsync(BlockTarget.Both);
             };
 
             if (!_hotkeyService.Register())
             {
-                Log.Warning("Failed to register hotkey Ctrl+Alt+B — another app may be using it");
+                Log.Warning("Failed to register global hotkey Ctrl+Alt+B — shortcut may be in use by another app");
                 _trayIconManager.ShowNotification(
                     "CamMicBlocker",
-                    "Could not register Ctrl+Alt+B hotkey. Another app may be using it.",
+                    "Could not register Ctrl+Alt+B hotkey. Shortcut may be in use by another app.",
                     System.Windows.Forms.ToolTipIcon.Warning);
             }
 
-            // 7. Read and display initial state
+            // Step 9: Reconcile initial system state
+            Log.Information("[Startup 8/8] Reconciling initial device & policy state");
             var initialState = _blockingService.GetCurrentState();
             _trayIconManager.UpdateState(initialState);
 
-            Log.Information("Application started successfully. Camera={Camera}, Mic={Mic}",
+            // Step 10: Show main window on launch
+            ShowMainWindow();
+
+            Log.Information("=== [Startup Complete] Application ready. Effective Camera={Camera}, Mic={Mic} ===",
                 initialState.Camera.EffectiveStatus, initialState.Microphone.EffectiveStatus);
         }
         catch (Exception ex)
         {
-            Log.Fatal(ex, "Failed to initialize application");
+            var reportPath = CrashReporter.GenerateCrashReport(ex, "App.OnStartup");
+            Log.Fatal(ex, "Fatal error during startup. Crash report saved to {ReportPath}", reportPath);
+
             System.Windows.MessageBox.Show(
-                $"CamMicBlocker failed to start:\n{ex.Message}\n\nCheck logs at:\n{LoggingConfiguration.GetLogDirectory()}",
+                $"CamMicBlocker failed to start:\n{ex.Message}\n\nCrash report saved to:\n{reportPath}\nLogs directory:\n{LoggingConfiguration.GetLogDirectory()}",
                 "CamMicBlocker — Startup Error",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
+
             Shutdown();
         }
+    }
+
+    private void ShowMainWindow()
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (_mainWindow == null) return;
+            Log.Debug("Showing MainWindow");
+            _mainWindow.Show();
+            if (_mainWindow.WindowState == WindowState.Minimized)
+                _mainWindow.WindowState = WindowState.Normal;
+            _mainWindow.Activate();
+            _mainWindow.RefreshState();
+        });
     }
 
     private void OnBlockStateChanged(BlockState state)
     {
         Dispatcher.BeginInvoke(() =>
         {
-            // Show overlay notification
             if (state.AllBlocked)
             {
                 NotificationWindow.Show("Camera & Microphone: BLOCKED", isBlocked: true);
@@ -156,26 +188,22 @@ public partial class App : System.Windows.Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        Log.Information("Application shutting down");
+        Log.Information("Application shutting down cleanly");
 
         _hotkeyService?.Dispose();
         _trayIconManager?.Dispose();
 
-        // Release the mutex so a new instance can start
         if (_singleInstanceMutex != null)
         {
             try
             {
                 _singleInstanceMutex.ReleaseMutex();
             }
-            catch (ApplicationException)
-            {
-                // Mutex was not owned — that's fine
-            }
+            catch (ApplicationException) { }
             _singleInstanceMutex.Dispose();
         }
 
-        Log.Information("=== CamMicBlocker stopped ===");
+        Log.Information("=== CamMicBlocker Stopped ===");
         Log.CloseAndFlush();
 
         base.OnExit(e);

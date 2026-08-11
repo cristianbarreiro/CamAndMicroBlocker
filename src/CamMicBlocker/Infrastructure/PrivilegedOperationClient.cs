@@ -75,7 +75,8 @@ public sealed class PrivilegedOperationClient : IDeviceController
             return OperationResult.Fail(error);
         }
 
-        Log.Debug("Launching elevated helper: {Path} {Command} {Argument}", _helperPath, command, argument);
+        var sw = Stopwatch.StartNew();
+        Log.Debug("Launching elevated helper: Path={Path}, Command={Command}, Argument={Argument}", _helperPath, command, argument);
 
         try
         {
@@ -89,21 +90,22 @@ public sealed class PrivilegedOperationClient : IDeviceController
                 CreateNoWindow = true
             };
 
-            // Note: When UseShellExecute=true, we cannot redirect stdout.
-            // The elevated helper writes results to a temp file instead.
             var resultFilePath = Path.Combine(Path.GetTempPath(), $"CamMicBlocker_result_{Guid.NewGuid():N}.json");
             startInfo.Arguments = $"{command} \"{argument}\" --result-file \"{resultFilePath}\"";
 
             using var process = Process.Start(startInfo);
             if (process == null)
             {
+                sw.Stop();
+                Log.Error("Failed to start elevated helper process: Command={Command}, DurationMs={DurationMs}", command, sw.ElapsedMilliseconds);
                 return OperationResult.Fail("Failed to start elevated helper process");
             }
 
-            // Wait for the elevated process to complete
             await process.WaitForExitAsync();
+            sw.Stop();
 
-            Log.Debug("Elevated helper exited with code {ExitCode}", process.ExitCode);
+            Log.Debug("Elevated helper finished: Command={Command}, ExitCode={ExitCode}, DurationMs={DurationMs}",
+                command, process.ExitCode, sw.ElapsedMilliseconds);
 
             if (process.ExitCode != 0)
             {

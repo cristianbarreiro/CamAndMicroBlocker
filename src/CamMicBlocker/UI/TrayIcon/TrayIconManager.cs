@@ -2,17 +2,12 @@ using System.Drawing;
 using System.Windows.Forms;
 using CamMicBlocker.Application;
 using CamMicBlocker.Domain.Models;
-using CamMicBlocker.Logging;
 using Serilog;
 
 namespace CamMicBlocker.UI.TrayIcon;
 
 /// <summary>
 /// Manages the system tray icon, context menu, and tooltip.
-/// Uses System.Windows.Forms.NotifyIcon (proven and reliable for system tray).
-/// 
-/// Icons are generated in memory as colored padlocks to avoid external file dependencies.
-/// All GDI resources are properly tracked and disposed.
 /// </summary>
 public sealed class TrayIconManager : IDisposable
 {
@@ -23,23 +18,20 @@ public sealed class TrayIconManager : IDisposable
     private readonly BlockingService _blockingService;
     private readonly StartupService _startupService;
 
-    // Menu items (kept as fields for state updates)
-    private readonly ToolStripMenuItem _statusCameraItem;
-    private readonly ToolStripMenuItem _statusMicItem;
-    private readonly ToolStripMenuItem _blockCameraItem;
-    private readonly ToolStripMenuItem _blockMicItem;
-    private readonly ToolStripMenuItem _blockBothItem;
-    private readonly ToolStripMenuItem _unblockCameraItem;
-    private readonly ToolStripMenuItem _unblockMicItem;
-    private readonly ToolStripMenuItem _unblockBothItem;
-    private readonly ToolStripMenuItem _startupItem;
+    // Menu items
+    private readonly ToolStripMenuItem _showAppItem;
+    private readonly ToolStripMenuItem _toggleItem;
+    private readonly ToolStripMenuItem _exitItem;
 
     // Icons (tracked for disposal)
     private Icon? _greenIcon;
     private Icon? _redIcon;
     private Icon? _yellowIcon;
 
-    /// <summary>Fired when the user clicks Exit.</summary>
+    /// <summary>Fired when the user clicks Show Application.</summary>
+    public event Action? ShowMainWindowRequested;
+
+    /// <summary>Fired when the user clicks Exit Application.</summary>
     public event Action? ExitRequested;
 
     public TrayIconManager(BlockingService blockingService, StartupService startupService)
@@ -55,78 +47,25 @@ public sealed class TrayIconManager : IDisposable
         // Build context menu
         _contextMenu = new ContextMenuStrip();
 
-        // Status section (disabled items, for display only)
-        _statusCameraItem = new ToolStripMenuItem("Camera: Checking...") { Enabled = false };
-        _statusMicItem = new ToolStripMenuItem("Microphone: Checking...") { Enabled = false };
-        _contextMenu.Items.Add(_statusCameraItem);
-        _contextMenu.Items.Add(_statusMicItem);
-        _contextMenu.Items.Add(new ToolStripSeparator());
-
-        // Block actions
-        _blockCameraItem = new ToolStripMenuItem("🔒 Block Camera");
-        _blockCameraItem.Click += async (_, _) => await SafeExecuteAsync(() => _blockingService.BlockAsync(BlockTarget.Camera));
-
-        _blockMicItem = new ToolStripMenuItem("🔒 Block Microphone");
-        _blockMicItem.Click += async (_, _) => await SafeExecuteAsync(() => _blockingService.BlockAsync(BlockTarget.Microphone));
-
-        _blockBothItem = new ToolStripMenuItem("🔒 Block Both");
-        _blockBothItem.Click += async (_, _) => await SafeExecuteAsync(() => _blockingService.BlockAsync(BlockTarget.Both));
-
-        _contextMenu.Items.Add(_blockCameraItem);
-        _contextMenu.Items.Add(_blockMicItem);
-        _contextMenu.Items.Add(_blockBothItem);
-        _contextMenu.Items.Add(new ToolStripSeparator());
-
-        // Unblock actions
-        _unblockCameraItem = new ToolStripMenuItem("🔓 Unblock Camera");
-        _unblockCameraItem.Click += async (_, _) => await SafeExecuteAsync(() => _blockingService.UnblockAsync(BlockTarget.Camera));
-
-        _unblockMicItem = new ToolStripMenuItem("🔓 Unblock Microphone");
-        _unblockMicItem.Click += async (_, _) => await SafeExecuteAsync(() => _blockingService.UnblockAsync(BlockTarget.Microphone));
-
-        _unblockBothItem = new ToolStripMenuItem("🔓 Unblock Both");
-        _unblockBothItem.Click += async (_, _) => await SafeExecuteAsync(() => _blockingService.UnblockAsync(BlockTarget.Both));
-
-        _contextMenu.Items.Add(_unblockCameraItem);
-        _contextMenu.Items.Add(_unblockMicItem);
-        _contextMenu.Items.Add(_unblockBothItem);
-        _contextMenu.Items.Add(new ToolStripSeparator());
-
-        // Settings section
-        _startupItem = new ToolStripMenuItem("Start with Windows")
+        // 1. Show Application
+        _showAppItem = new ToolStripMenuItem("📱 Show Application")
         {
-            CheckOnClick = true,
-            Checked = _startupService.IsStartupEnabled()
+            Font = new Font(SystemFonts.DefaultFont, FontStyle.Bold)
         };
-        _startupItem.Click += (_, _) =>
-        {
-            if (_startupItem.Checked)
-                _startupService.EnableStartup();
-            else
-                _startupService.DisableStartup();
-        };
-        _contextMenu.Items.Add(_startupItem);
+        _showAppItem.Click += (_, _) => ShowMainWindowRequested?.Invoke();
+        _contextMenu.Items.Add(_showAppItem);
 
-        // Log folder
-        var openLogItem = new ToolStripMenuItem("📁 Open Log Folder");
-        openLogItem.Click += (_, _) =>
-        {
-            var logDir = LoggingConfiguration.GetLogDirectory();
-            if (System.IO.Directory.Exists(logDir))
-                System.Diagnostics.Process.Start("explorer.exe", logDir);
-        };
-        _contextMenu.Items.Add(openLogItem);
+        // 2. Lock / Unlock (Toggle Both)
+        _toggleItem = new ToolStripMenuItem("🔒 Lock / Unlock");
+        _toggleItem.Click += async (_, _) => await SafeExecuteAsync(() => _blockingService.ToggleAsync(BlockTarget.Both));
+        _contextMenu.Items.Add(_toggleItem);
 
         _contextMenu.Items.Add(new ToolStripSeparator());
 
-        // Hotkey hint
-        var hotkeyItem = new ToolStripMenuItem("Hotkey: Ctrl + Alt + B") { Enabled = false };
-        _contextMenu.Items.Add(hotkeyItem);
-
-        // Exit
-        var exitItem = new ToolStripMenuItem("❌ Exit");
-        exitItem.Click += (_, _) => ExitRequested?.Invoke();
-        _contextMenu.Items.Add(exitItem);
+        // 3. Exit Application
+        _exitItem = new ToolStripMenuItem("❌ Exit Application");
+        _exitItem.Click += (_, _) => ExitRequested?.Invoke();
+        _contextMenu.Items.Add(_exitItem);
 
         // Create NotifyIcon
         _notifyIcon = new NotifyIcon
@@ -137,14 +76,17 @@ public sealed class TrayIconManager : IDisposable
             ContextMenuStrip = _contextMenu
         };
 
-        // Left click toggles
-        _notifyIcon.MouseClick += async (_, e) =>
+        // Left click opens application window
+        _notifyIcon.MouseClick += (_, e) =>
         {
             if (e.Button == MouseButtons.Left)
             {
-                await SafeExecuteAsync(() => _blockingService.ToggleAsync(BlockTarget.Both));
+                ShowMainWindowRequested?.Invoke();
             }
         };
+
+        // Double click also opens application window
+        _notifyIcon.DoubleClick += (_, _) => ShowMainWindowRequested?.Invoke();
 
         // Listen for state changes
         _blockingService.StateChanged += OnStateChanged;
@@ -162,39 +104,27 @@ public sealed class TrayIconManager : IDisposable
 
     private void OnStateChanged(BlockState state)
     {
-        // Update status display
-        _statusCameraItem.Text = $"Camera: {FormatStatus(state.Camera.EffectiveStatus)}";
-        _statusMicItem.Text = $"Microphone: {FormatStatus(state.Microphone.EffectiveStatus)}";
-
-        // Update icon
+        // Update icon and tooltip
         if (state.AllBlocked)
         {
             _notifyIcon.Icon = _redIcon;
             _notifyIcon.Text = "CamMicBlocker — Camera & Microphone: BLOCKED";
+            _toggleItem.Text = "🔓 Unlock (Both)";
         }
         else if (state.AllAllowed)
         {
             _notifyIcon.Icon = _greenIcon;
             _notifyIcon.Text = "CamMicBlocker — Camera & Microphone: Allowed";
+            _toggleItem.Text = "🔒 Lock (Both)";
         }
         else
         {
             _notifyIcon.Icon = _yellowIcon;
             _notifyIcon.Text = "CamMicBlocker — Partial/Mixed state";
+            _toggleItem.Text = "🔒 Lock / Unlock";
         }
 
-        // Update menu item enabled states
-        var cameraBlocked = state.Camera.EffectiveStatus == BlockStatus.Blocked;
-        var micBlocked = state.Microphone.EffectiveStatus == BlockStatus.Blocked;
-
-        _blockCameraItem.Enabled = !cameraBlocked;
-        _blockMicItem.Enabled = !micBlocked;
-        _blockBothItem.Enabled = !(cameraBlocked && micBlocked);
-        _unblockCameraItem.Enabled = cameraBlocked;
-        _unblockMicItem.Enabled = micBlocked;
-        _unblockBothItem.Enabled = cameraBlocked || micBlocked;
-
-        Log.Debug("UI updated: Camera={CameraState}, Mic={MicState}",
+        Log.Debug("Tray UI updated: Camera={CameraState}, Mic={MicState}",
             state.Camera.EffectiveStatus, state.Microphone.EffectiveStatus);
     }
 
@@ -206,14 +136,6 @@ public sealed class TrayIconManager : IDisposable
         _notifyIcon.ShowBalloonTip(2000, title, message, icon);
     }
 
-    private static string FormatStatus(BlockStatus status) => status switch
-    {
-        BlockStatus.Allowed => "✅ Allowed",
-        BlockStatus.Blocked => "🔒 Blocked",
-        BlockStatus.Unknown => "⚠️ Unknown",
-        _ => "?"
-    };
-
     private async Task SafeExecuteAsync(Func<Task<Domain.Interfaces.OperationResult>> action)
     {
         try
@@ -222,12 +144,6 @@ public sealed class TrayIconManager : IDisposable
             if (!result.Success)
             {
                 ShowNotification("CamMicBlocker", $"Operation failed: {result.ErrorMessage}", ToolTipIcon.Error);
-            }
-            else
-            {
-                var state = _blockingService.GetCurrentState();
-                var statusText = state.AllBlocked ? "BLOCKED" : state.AllAllowed ? "Allowed" : "Partially blocked";
-                ShowNotification("CamMicBlocker", $"Camera & Microphone: {statusText}");
             }
         }
         catch (Exception ex)
@@ -238,8 +154,7 @@ public sealed class TrayIconManager : IDisposable
     }
 
     /// <summary>
-    /// Creates a padlock icon in the specified color. Generated in memory — no external file needed.
-    /// Properly manages GDI handle lifecycle.
+    /// Creates a padlock icon in memory with proper GDI cleanup.
     /// </summary>
     private static Icon CreatePadlockIcon(Color color)
     {
@@ -256,13 +171,11 @@ public sealed class TrayIconManager : IDisposable
         // Padlock shackle (arc)
         g.DrawArc(pen, 9, 4, 14, 16, 180, 180);
 
-        // Create icon from bitmap — GetHicon() creates a native handle
         var hIcon = bmp.GetHicon();
-        // Icon.FromHandle doesn't take ownership; we create a clone that does
         var tempIcon = Icon.FromHandle(hIcon);
         var icon = (Icon)tempIcon.Clone();
         tempIcon.Dispose();
-        DestroyIcon(hIcon); // Clean up the native handle
+        DestroyIcon(hIcon);
 
         return icon;
     }
