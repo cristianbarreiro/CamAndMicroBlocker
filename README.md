@@ -157,8 +157,8 @@ Cam&MicroBlocker/
 PrivLock is free software released under the **GNU General Public License v3.0 (GPL-3.0)**.
 
 ```text
-Copyright (C) <YEAR> <COPYRIGHT HOLDER>
-Repository: <REPOSITORY_URL>
+Copyright (C) 2026 Cristian Barreiro
+Repository: https://github.com/cristianbarreiro/PrivLock.git
 ```
 
 ### Key Terms & Conditions under GPL-3.0:
