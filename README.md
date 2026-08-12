@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011%20x64-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Platform Windows" />
   <img src="https://img.shields.io/badge/Framework-.NET%2010.0%20WPF-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 10" />
   <img src="https://img.shields.io/badge/Security-Dual--Layer%20Protection-4CAF50?style=for-the-badge&logo=windows-terminal&logoColor=white" alt="Dual Layer Security" />
+  <img src="https://img.shields.io/badge/License-GNU%20GPLv3-0078D4?style=for-the-badge&logo=gnu" alt="GPLv3 License" />
   <img src="https://img.shields.io/badge/Language-Español%20%7C%20English-007ACC?style=for-the-badge" alt="i18n Support" />
 </p>
 
@@ -153,4 +154,19 @@ Cam&MicroBlocker/
 
 ## 📄 License
 
-This project is licensed under the **MIT License**. See the `LICENSE` file for details.
+PrivLock is free software released under the **GNU General Public License v3.0 (GPL-3.0)**.
+
+```text
+Copyright (C) <YEAR> <COPYRIGHT HOLDER>
+Repository: <REPOSITORY_URL>
+```
+
+### Key Terms & Conditions under GPL-3.0:
+- 🔓 **Freedom to Use & Modify**: You are free to run, study, adapt, modify, and redistribute this software.
+- 🔄 **Copyleft Requirement**: Any modified versions or derivative works that are distributed must also be licensed under GNU GPL v3.0, ensuring the software remains free and open source.
+- 💼 **Commercial Usage**: Commercial use and distribution are permitted under GPL-3.0 conditions (provided Corresponding Source code is made available to recipients).
+- 🛡️ **No Warranty**: PrivLock is provided "as is" without warranty of any kind, explicit or implied.
+
+For complete license terms, legal notices, C# header templates, and third-party dependency disclosures, please see:
+- [LICENSE](LICENSE) — Official verbatim text of the GNU General Public License v3.0
+- [COPYRIGHT](COPYRIGHT) — Copyright details, recommended source code header template, and third-party notices
