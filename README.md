@@ -16,6 +16,24 @@ Combina una protección de **doble capa** (Políticas de Grupo AppPrivacy + Desh
 
 ---
 
+## 📦 Descargas Directas & Assets (Releases)
+
+<div align="center">
+
+| Recurso / Asset | Descripción | Descarga Directa (GitHub Assets) |
+| :--- | :--- | :---: |
+| 💻 **PrivLock Setup** | Instalador de Windows de elevación única (`.exe`) | [<img src="https://img.shields.io/badge/Descargar-PrivLock--Setup--1.0.0.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Setup" />](https://github.com/cristianbarreiro/Cam-MicroBlocker/releases/download/v1.0.0/PrivLock-Setup-1.0.0.exe) |
+| ⚡ **PrivLock Portable** | Paquete comprimido portable listo para usar (`.zip`) | [<img src="https://img.shields.io/badge/Descargar-PrivLock--Portable--1.0.0.zip-512BD4?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Portable ZIP" />](https://github.com/cristianbarreiro/Cam-MicroBlocker/releases/download/v1.0.0/PrivLock-Portable-1.0.0.zip) |
+
+<br />
+
+> 📌 **Ver todas las versiones y assets en GitHub Releases**:  
+> 👉 **[Ir a la página de GitHub Releases & Assets](https://github.com/cristianbarreiro/Cam-MicroBlocker/releases)**
+
+</div>
+
+---
+
 ## 📸 Screenshots & Vista Previa
 
 > [!TIP]
@@ -100,7 +118,7 @@ Si deseás compilar el proyecto manualmente con el SDK de .NET 10:
 
 ```powershell
 # 1. Clonar el repositorio
-git clone https://github.com/tu-usuario/Cam-MicroBlocker.git
+git clone https://github.com/cristianbarreiro/Cam-MicroBlocker.git
 cd Cam-MicroBlocker
 
 # 2. Restaurar y compilar la solución

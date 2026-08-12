@@ -80,7 +80,14 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# 5. Create Portable ZIP Package
+Write-Host "`n[5/5] Creating Portable ZIP package..." -ForegroundColor Yellow
+$ZipPath = "$InstallerOutDir\PrivLock-Portable-1.0.0.zip"
+if (Test-Path $ZipPath) { Remove-Item $ZipPath -Force }
+Compress-Archive -Path "$PublishDir\*" -DestinationPath $ZipPath -Force
+
 Write-Host "`n==========================================================" -ForegroundColor Green
-Write-Host " SUCCESS! Installer package generated successfully at:" -ForegroundColor Green
-Write-Host " $InstallerOutDir\PrivLock-Setup-1.0.0.exe" -ForegroundColor White
+Write-Host " SUCCESS! Release assets generated successfully at:" -ForegroundColor Green
+Write-Host " Setup:    $InstallerOutDir\PrivLock-Setup-1.0.0.exe" -ForegroundColor White
+Write-Host " Portable: $InstallerOutDir\PrivLock-Portable-1.0.0.zip" -ForegroundColor White
 Write-Host "==========================================================" -ForegroundColor Green
