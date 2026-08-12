@@ -1,6 +1,6 @@
 <p align="center">
   <img src="assets/logo/cammicroblocker_logo.png" alt="PrivLock Logo" width="128" />
-  <h1 align="center">PrivLock — Cam &amp; Microphone Blocker</h1>
+  <h1 align="center">PrivLock — Camera &amp; Microphone Blocker</h1>
 </p>
 
 <p align="center">
@@ -10,40 +10,35 @@
   <img src="https://img.shields.io/badge/Language-Español%20%7C%20English-007ACC?style=for-the-badge" alt="i18n Support" />
 </p>
 
-**PrivLock** es una aplicación de escritorio nativa para Windows (C# / .NET 10 / WPF) diseñada para **bloquear y desbloquear de forma rápida, confiable y 100% reversible el acceso a la cámara y al micrófono**.
-
-Combina una protección de **doble capa** (Políticas de Grupo AppPrivacy + Deshabilitación de nodos PnP en el Administrador de Dispositivos) con un modelo de **elevación única (Single-UAC)** que evita carteles de confirmación repetitivos durante el uso.
+**PrivLock** is a native desktop application designed primarily for Windows (C# / .NET 10 / WPF), created to **quickly, reliably, and 100% reversibly block and unblock access to the camera and microphone**.
 
 ---
 
-## 📦 Descargas Directas & Assets (Releases)
+## 📦 Direct Downloads & Assets (Releases)
 
 <div align="center">
 
-| Recurso / Asset | Descripción | Descarga Directa (GitHub Assets) |
+| Resource / Asset | Description | Direct Download (GitHub Assets) |
 | :--- | :--- | :---: |
-| 💻 **PrivLock Setup** | Instalador de Windows de elevación única (`.exe`) | [<img src="https://img.shields.io/badge/Descargar-PrivLock--Setup--1.0.0.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Setup" />](https://github.com/cristianbarreiro/CamAndMicroBlocker/releases/download/v.1.0.0/PrivLock-Setup-1.0.0.exe) |
-| ⚡ **PrivLock Portable** | Paquete comprimido portable listo para usar (`.zip`) | [<img src="https://img.shields.io/badge/Descargar-PrivLock--Portable--1.0.0.zip-512BD4?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Portable ZIP" />](https://github.com/cristianbarreiro/CamAndMicroBlocker/releases/download/v.1.0.0/PrivLock-Portable-1.0.0.zip) |
+| 💻 **PrivLock Setup** | Single-elevation Windows installer (`.exe`) | [<img src="https://img.shields.io/badge/Download-PrivLock--Setup--1.0.0.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Setup" />](https://github.com/cristianbarreiro/CamAndMicroBlocker/releases/download/v.1.0.0/PrivLock-Setup-1.0.0.exe) |
+| ⚡ **PrivLock Portable** | Ready-to-use portable compressed package (`.zip`) | [<img src="https://img.shields.io/badge/Download-PrivLock--Portable--1.0.0.zip-512BD4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Portable ZIP" />](https://github.com/cristianbarreiro/CamAndMicroBlocker/releases/download/v.1.0.0/PrivLock-Portable-1.0.0.zip) |
 
 <br />
 
-> 📌 **Ver todas las versiones y assets en GitHub Releases**:  
-> 👉 **[Ir a la versión v1.0.0 en GitHub Releases](https://github.com/cristianbarreiro/CamAndMicroBlocker/releases/tag/v.1.0.0)**
+> 📌 **View all releases and assets on GitHub Releases**:  
+> 👉 **[Go to version v1.0.0 on GitHub Releases](https://github.com/cristianbarreiro/CamAndMicroBlocker/releases/tag/v.1.0.0)**
 
 </div>
 
 ---
 
-## 📸 Screenshots & Vista Previa
-
-> [!TIP]
-> *Reemplazá los enlaces `assets/screenshots/...` con las imágenes de tu aplicación.*
+## 📸 Screenshots & Preview
 
 <p align="center">
-  <!-- SCREENSHOT PLACEHOLDER 1: Ventana Principal -->
-  <img src="assets/screenshots/mainwindow_dark.png" alt="Ventana Principal PrivLock" width="420" />
+  <!-- SCREENSHOT PLACEHOLDER 1: Main Window -->
+  <img src="assets/screenshots/mainwindow_dark.png" alt="PrivLock Main Window" width="420" />
   <br />
-  <sub><b>Figura 1:</b> Ventana Principal con Fluent Dark Theme, cabecera integrada y selector de idioma.</sub>
+  <sub><b>Figure 1:</b> Main Window with Fluent Dark Theme, integrated title bar, and language selector.</sub>
 </p>
 
 <br />
@@ -52,16 +47,16 @@ Combina una protección de **doble capa** (Políticas de Grupo AppPrivacy + Desh
   <table>
     <tr>
       <td align="center">
-        <!-- SCREENSHOT PLACEHOLDER 2: Sección Como Funciona -->
-        <img src="assets/screenshots/protection_overview.png" alt="Sección de Protección de Doble Capa" width="380" />
+        <!-- SCREENSHOT PLACEHOLDER 2: How It Works Section -->
+        <img src="assets/screenshots/protection_overview.png" alt="Dual-Layer Protection Section" width="380" />
         <br />
-        <sub><b>Figura 2:</b> Resumen de Protección de Doble Capa</sub>
+        <sub><b>Figure 2:</b> Dual-Layer Protection Overview</sub>
       </td>
       <td align="center">
-        <!-- SCREENSHOT PLACEHOLDER 3: Menú de la Bandeja (Tray Menu) -->
-        <img src="assets/screenshots/tray_menu.png" alt="Menú de la Bandeja del Sistema" width="380" />
+        <!-- SCREENSHOT PLACEHOLDER 3: Tray Menu -->
+        <img src="assets/screenshots/tray_menu.png" alt="System Tray Menu" width="380" />
         <br />
-        <sub><b>Figura 3:</b> Menú en la Bandeja del Sistema (Tray)</sub>
+        <sub><b>Figure 3:</b> System Tray Menu</sub>
       </td>
     </tr>
   </table>
@@ -69,93 +64,93 @@ Combina una protección de **doble capa** (Políticas de Grupo AppPrivacy + Desh
 
 ---
 
-## ✨ Características Principales
+## ✨ Key Features
 
-- 🛡️ **Protección de Doble Capa (Dual-Layer Security)**:
-  1. **Capa 1 (Políticas de Sistema)**: Aplica directivas de grupo `HKLM\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy` para bloquear el acceso a aplicaciones de Windows y la Tienda.
-  2. **Capa 2 (Controlador de Hardware PnP)**: Ejecuta llamadas nativas `CfgMgr32.dll` (`CM_Disable_DevNode` / `CM_Enable_DevNode`) para deshabilitar físicamente los nodos de dispositivo en el sistema.
-- ⚡ **Cero Fatiga de UAC (Single-Elevation Model)**:
-  - Solicita permisos de administrador **una única vez al iniciar** (`requireAdministrator`).
-  - Todas las alternancias subsiguientes (atajo de teclado, menú de la bandeja o switches) ejecutan **al instante (0 ms de latencia IPC) sin volver a pedir UAC**.
-- 🎨 **Diseño Moderno Fluent Dark UI**:
-  - Cabecera integrada (*Custom Title Bar*) de 38px con esquinas redondeadas (12px) y sombra paralela.
-  - Barra de desplazamiento personalizada ultradelgada de 8px (*Custom ScrollBar*).
-- 🌐 **Soporte Multilingüe Dinámico (ES / EN)**:
-  - Selector segmentado en píldora `[ ES | EN ]` en el pie de la ventana.
-  - Cambio de idioma instantáneo en tiempo real sin reiniciar la aplicación.
-- ⌨️ **Atajo Global de Teclado**: Alterná el bloqueo instantáneo con **`Ctrl + Alt + B`**.
-- 📌 **Integración con la Bandeja del Sistema (System Tray)**:
-  - Se minimiza silenciosamente a la bandeja al cerrar `(X)`.
-  - Iconos dinámicos en memoria (Candado Verde = Permitido, Candado Rojo = Bloqueado).
-
----
-
-## 🛠️ Requisitos del Sistema
-
-- **Sistema Operativo**: Windows 10 o Windows 11 (64-bit).
-- **Runtime**: [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (o ejecutase la versión *Self-Contained* portable).
-- **Privilegios**: Requiere ejecución como Administrador (solicitado automáticamente por UAC al iniciar).
+- 🛡️ **Dual-Layer Protection (Dual-Layer Security)**:
+  1. **Layer 1 (System Policies)**: Applies group policies in `HKLM\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy` to block access for Windows and Store applications.
+  2. **Layer 2 (PnP Hardware Controller)**: Executes native `CfgMgr32.dll` calls (`CM_Disable_DevNode` / `CM_Enable_DevNode`) to disable device nodes at the system level.
+- ⚡ **Zero UAC Fatigue (Single-Elevation Model)**:
+  - Prompts for administrator permissions **only once upon startup** (`requireAdministrator`).
+  - All subsequent toggles (keyboard shortcut, system tray menu, or UI switches) execute **instantly (0 ms IPC latency) without prompting UAC again**.
+- 🎨 **Modern Fluent Dark UI Design**:
+  - Integrated header (*Custom Title Bar*) 38px high with rounded corners (12px) and drop shadow.
+  - Custom ultra-thin 8px scrollbar (*Custom ScrollBar*).
+- 🌐 **Dynamic Multilingual Support (ES / EN)**:
+  - Segmented pill selector `[ ES | EN ]` in the window footer.
+  - Instant real-time language switching without restarting the app.
+- ⌨️ **Global Keyboard Shortcut**: Toggle instant blocking using **`Ctrl + Alt + B`**.
+- 📌 **System Tray Integration**:
+  - Silently minimizes to the tray when closing `(X)`.
+  - In-memory dynamic icons (Green Lock = Allowed, Red Lock = Blocked).
 
 ---
 
-## 🚀 Instalación y Uso
+## 🛠️ System Requirements
 
-### Opción 1: Instalador de Windows (Recomendado)
-1. Descargá el instalador `PrivLock-Setup-1.0.0.exe` desde la sección de Releases.
-2. Ejecutá el instalador y seguí las instrucciones en pantalla.
-
-### Opción 2: Ejecutable Portable
-1. Descargá el ejecutable portable `PrivLock.exe` desde la sección de Releases.
-2. Hacé doble clic sobre `PrivLock.exe`.
-3. Aceptá la solicitud de UAC (Administrador) **una sola vez**.
-4. ¡Listo! La ventana principal se abrirá y el icono aparecerá en la barra de tareas junto al reloj.
+- **Operating System**: Windows 10 or Windows 11 (64-bit).
+- **Runtime**: [.NET 10 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/10.0) (or run the *Self-Contained* portable build).
+- **Privileges**: Requires Administrator rights (automatically requested via UAC on startup).
 
 ---
 
-## 💻 Compilación desde el Código Fuente
+## 🚀 Installation & Usage
 
-Si deseás compilar el proyecto manualmente con el SDK de .NET 10:
+### Option 1: Windows Installer (Recommended)
+1. Download the `PrivLock-Setup-1.0.0.exe` installer from the Releases section.
+2. Run the installer and follow the on-screen instructions.
+
+### Option 2: Portable Executable
+1. Download the portable executable `PrivLock.exe` from the Releases section.
+2. Double-click `PrivLock.exe`.
+3. Accept the UAC prompt (Administrator) **once**.
+4. All set! The main window will open and the icon will appear in the system tray near the clock.
+
+---
+
+## 💻 Building from Source
+
+If you want to build the project manually using the .NET 10 SDK:
 
 ```powershell
-# 1. Clonar el repositorio
+# 1. Clone the repository
 git clone https://github.com/cristianbarreiro/CamAndMicroBlocker.git
 cd CamAndMicroBlocker
 
-# 2. Restaurar y compilar la solución
+# 2. Restore and build the solution
 dotnet build CamMicBlocker.sln
 
-# 3. Ejecutar las pruebas unitarias (26 tests)
+# 3. Run unit tests (26 tests)
 dotnet test CamMicBlocker.sln
 
-# 4. Publicar el ejecutable portable de un solo archivo (Single-File)
+# 4. Publish the single-file portable executable (Single-File)
 dotnet publish src/CamMicBlocker/CamMicBlocker.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o publish_out
 ```
 
-El ejecutable listo para distribuir se generará en la carpeta `publish_out\PrivLock.exe`.
+The distribution-ready executable will be generated in the `publish_out\PrivLock.exe` folder.
 
 ---
 
-## 📐 Arquitectura de Código
+## 📐 Code Architecture
 
-El proyecto sigue una arquitectura limpia en capas basada en **DDD (Domain-Driven Design)**:
+The project follows a clean layered architecture based on **DDD (Domain-Driven Design)**:
 
 ```text
 Cam&MicroBlocker/
 ├── src/
 │   └── CamMicBlocker/
-│       ├── App.xaml / App.xaml.cs    # Inicio de aplicación y logging de 8 pasos
-│       ├── Application/              # Servicios de Orquestación (BlockingService, LanguageService)
-│       ├── Domain/                   # Modelos puros e Interfaces (IDeviceDetector, IDeviceController)
-│       ├── Infrastructure/           # P/Invoke CfgMgr32, Registro HKLM, WMI DeviceDetector
-│       ├── Logging/                  # Serilog + CrashReporter (Dumps JSON post-mortem)
-│       └── UI/                       # Vistas WPF (MainWindow, NotificationWindow, TrayIcon, Localization)
+│       ├── App.xaml / App.xaml.cs    # Application startup and 8-step bootstrapper logging
+│       ├── Application/              # Orchestration Services (BlockingService, LanguageService)
+│       ├── Domain/                   # Pure Domain Models and Interfaces (IDeviceDetector, IDeviceController)
+│       ├── Infrastructure/           # CfgMgr32 P/Invoke, HKLM Registry, WMI DeviceDetector
+│       ├── Logging/                  # Serilog + CrashReporter (JSON post-mortem dumps)
+│       └── UI/                       # WPF Views (MainWindow, NotificationWindow, TrayIcon, Localization)
 ├── tests/
-│   └── CamMicBlocker.Tests/          # Suite de Pruebas Unitarias xUnit
-└── AGENTS.md                         # Guía de arquitectura y reglas de seguridad para agentes AI
+│   └── CamMicBlocker.Tests/          # xUnit Unit Test Suite
+└── AGENTS.md                         # Architecture guide and security rules for AI agents
 ```
 
 ---
 
-## 📄 Licencia
+## 📄 License
 
-Este proyecto está bajo la Licencia **MIT**. Consulta el archivo `LICENSE` para más detalles.
+This project is licensed under the **MIT License**. See the `LICENSE` file for details.
