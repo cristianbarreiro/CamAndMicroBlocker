@@ -30,7 +30,6 @@
     <system:String x:Key="DeviceDisabled">DISABLED</system:String>
 
     <!-- Footer Controls -->
-    <system:String x:Key="StartWithWindows">Start with Windows</system:String>
     <system:String x:Key="HotkeyLabel">Hotkey: Ctrl+Alt+B</system:String>
     <system:String x:Key="LanguageLabel">Language:</system:String>
 

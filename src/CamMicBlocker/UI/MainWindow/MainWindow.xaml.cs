@@ -29,8 +29,6 @@ public partial class MainWindow : Window
         _startupService = startupService;
         _languageService = languageService;
 
-        StartupCheckBox.IsChecked = _startupService.IsStartupEnabled();
-
         // Sync Language Radios with current language state
         _isUpdatingUi = true;
         try
@@ -189,15 +187,6 @@ public partial class MainWindow : Window
             MessageBox.Show($"Operation failed:\n{result.ErrorMessage}", "CamMicBlocker", MessageBoxButton.OK, MessageBoxImage.Warning);
             RefreshState();
         }
-    }
-
-    private void OnStartupCheckBoxClick(object sender, RoutedEventArgs e)
-    {
-        bool enable = StartupCheckBox.IsChecked == true;
-        if (enable)
-            _startupService.EnableStartup();
-        else
-            _startupService.DisableStartup();
     }
 
     private void OnWindowClosing(object sender, CancelEventArgs e)

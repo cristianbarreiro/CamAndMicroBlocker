@@ -366,18 +366,12 @@
                 <!-- Footer Controls -->
                 <Grid Grid.Row="2">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Start with Windows CheckBox -->
-                    <CheckBox x:Name="StartupCheckBox" Grid.Column="0" Content="{DynamicResource StartWithWindows}"
-                              Foreground="#AAAAAA" FontSize="12" VerticalAlignment="Center"
-                              Click="OnStartupCheckBoxClick"/>
-
                     <!-- Segmented Language Switcher -->
-                    <Border Grid.Column="1" Background="#252528" CornerRadius="6" Padding="2" VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Border Grid.Column="0" Background="#252528" CornerRadius="6" Padding="2" VerticalAlignment="Center" HorizontalAlignment="Left">
                         <StackPanel Orientation="Horizontal">
                             <RadioButton x:Name="LangEsRadio" Content="ES" Style="{StaticResource SegmentedRadioButtonStyle}"
                                          GroupName="LangGroup" Checked="OnLangEsChecked"/>
@@ -387,7 +381,7 @@
                     </Border>
 
                     <!-- Hotkey Label -->
-                    <TextBlock Grid.Column="2" Text="{DynamicResource HotkeyLabel}" FontSize="11" Foreground="#666666" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                    <TextBlock Grid.Column="1" Text="{DynamicResource HotkeyLabel}" FontSize="11" Foreground="#666666" VerticalAlignment="Center" HorizontalAlignment="Right"/>
                 </Grid>
             </Grid>
         </Grid>
