@@ -22,13 +22,13 @@ Combina una protección de **doble capa** (Políticas de Grupo AppPrivacy + Desh
 
 | Recurso / Asset | Descripción | Descarga Directa (GitHub Assets) |
 | :--- | :--- | :---: |
-| 💻 **PrivLock Setup** | Instalador de Windows de elevación única (`.exe`) | [<img src="https://img.shields.io/badge/Descargar-PrivLock--Setup--1.0.0.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Setup" />](https://github.com/cristianbarreiro/Cam-MicroBlocker/releases/download/v1.0.0/PrivLock-Setup-1.0.0.exe) |
-| ⚡ **PrivLock Portable** | Paquete comprimido portable listo para usar (`.zip`) | [<img src="https://img.shields.io/badge/Descargar-PrivLock--Portable--1.0.0.zip-512BD4?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Portable ZIP" />](https://github.com/cristianbarreiro/Cam-MicroBlocker/releases/download/v1.0.0/PrivLock-Portable-1.0.0.zip) |
+| 💻 **PrivLock Setup** | Instalador de Windows de elevación única (`.exe`) | [<img src="https://img.shields.io/badge/Descargar-PrivLock--Setup--1.0.0.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Setup" />](https://github.com/cristianbarreiro/CamAndMicroBlocker/releases/download/v.1.0.0/PrivLock-Setup-1.0.0.exe) |
+| ⚡ **PrivLock Portable** | Paquete comprimido portable listo para usar (`.zip`) | [<img src="https://img.shields.io/badge/Descargar-PrivLock--Portable--1.0.0.zip-512BD4?style=for-the-badge&logo=windows&logoColor=white" alt="Descargar Portable ZIP" />](https://github.com/cristianbarreiro/CamAndMicroBlocker/releases/download/v.1.0.0/PrivLock-Portable-1.0.0.zip) |
 
 <br />
 
 > 📌 **Ver todas las versiones y assets en GitHub Releases**:  
-> 👉 **[Ir a la página de GitHub Releases & Assets](https://github.com/cristianbarreiro/Cam-MicroBlocker/releases)**
+> 👉 **[Ir a la versión v1.0.0 en GitHub Releases](https://github.com/cristianbarreiro/CamAndMicroBlocker/releases/tag/v.1.0.0)**
 
 </div>
 
@@ -118,8 +118,8 @@ Si deseás compilar el proyecto manualmente con el SDK de .NET 10:
 
 ```powershell
 # 1. Clonar el repositorio
-git clone https://github.com/cristianbarreiro/Cam-MicroBlocker.git
-cd Cam-MicroBlocker
+git clone https://github.com/cristianbarreiro/CamAndMicroBlocker.git
+cd CamAndMicroBlocker
 
 # 2. Restaurar y compilar la solución
 dotnet build CamMicBlocker.sln
