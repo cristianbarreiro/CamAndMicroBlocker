@@ -40,7 +40,8 @@ public sealed class LanguageService
 
         try
         {
-            var dictUri = new Uri($"/CamMicBlocker;component/UI/Resources/Localization/Strings.{langCode}.xaml", UriKind.Relative);
+            var asmName = System.Reflection.Assembly.GetExecutingAssembly().GetName().Name;
+            var dictUri = new Uri($"/{asmName};component/UI/Resources/Localization/Strings.{langCode}.xaml", UriKind.Relative);
             var newDict = new ResourceDictionary { Source = dictUri };
 
             var merged = System.Windows.Application.Current.Resources.MergedDictionaries;

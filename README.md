@@ -1,6 +1,6 @@
 <p align="center">
-  <img src="assets/logo/cammicroblocker_logo.png" alt="CamMicroBlocker Logo" width="128" />
-  <h1 align="center">Cam &amp; Microphone Blocker</h1>
+  <img src="assets/logo/cammicroblocker_logo.png" alt="PrivLock Logo" width="128" />
+  <h1 align="center">PrivLock — Cam &amp; Microphone Blocker</h1>
 </p>
 
 <p align="center">
@@ -10,7 +10,7 @@
   <img src="https://img.shields.io/badge/Language-Español%20%7C%20English-007ACC?style=for-the-badge" alt="i18n Support" />
 </p>
 
-**CamMicBlocker** es una aplicación de escritorio nativa para Windows (C# / .NET 10 / WPF) diseñada para **bloquear y desbloquear de forma rápida, confiable y 100% reversible el acceso a la cámara y al micrófono**.
+**PrivLock** es una aplicación de escritorio nativa para Windows (C# / .NET 10 / WPF) diseñada para **bloquear y desbloquear de forma rápida, confiable y 100% reversible el acceso a la cámara y al micrófono**.
 
 Combina una protección de **doble capa** (Políticas de Grupo AppPrivacy + Deshabilitación de nodos PnP en el Administrador de Dispositivos) con un modelo de **elevación única (Single-UAC)** que evita carteles de confirmación repetitivos durante el uso.
 
@@ -23,7 +23,7 @@ Combina una protección de **doble capa** (Políticas de Grupo AppPrivacy + Desh
 
 <p align="center">
   <!-- SCREENSHOT PLACEHOLDER 1: Ventana Principal -->
-  <img src="assets/screenshots/mainwindow_dark.png" alt="Ventana Principal CamMicBlocker" width="420" />
+  <img src="assets/screenshots/mainwindow_dark.png" alt="Ventana Principal PrivLock" width="420" />
   <br />
   <sub><b>Figura 1:</b> Ventana Principal con Fluent Dark Theme, cabecera integrada y selector de idioma.</sub>
 </p>
@@ -82,9 +82,13 @@ Combina una protección de **doble capa** (Políticas de Grupo AppPrivacy + Desh
 
 ## 🚀 Instalación y Uso
 
-### Opción 1: Ejecutable Portable (Recomendado)
-1. Descargá el ejecutable portable `CamMicBlocker.exe` desde la sección de Releases.
-2. Hacé doble clic sobre `CamMicBlocker.exe`.
+### Opción 1: Instalador de Windows (Recomendado)
+1. Descargá el instalador `PrivLock-Setup-1.0.0.exe` desde la sección de Releases.
+2. Ejecutá el instalador y seguí las instrucciones en pantalla.
+
+### Opción 2: Ejecutable Portable
+1. Descargá el ejecutable portable `PrivLock.exe` desde la sección de Releases.
+2. Hacé doble clic sobre `PrivLock.exe`.
 3. Aceptá la solicitud de UAC (Administrador) **una sola vez**.
 4. ¡Listo! La ventana principal se abrirá y el icono aparecerá en la barra de tareas junto al reloj.
 
@@ -109,7 +113,7 @@ dotnet test CamMicBlocker.sln
 dotnet publish src/CamMicBlocker/CamMicBlocker.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o publish_out
 ```
 
-El ejecutable listo para distribuir se generará en la carpeta `publish_out\CamMicBlocker.exe`.
+El ejecutable listo para distribuir se generará en la carpeta `publish_out\PrivLock.exe`.
 
 ---
 

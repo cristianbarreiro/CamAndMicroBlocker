@@ -1,12 +1,12 @@
 # =====================================================================
-# CamMicroBlocker — Automated Build & Packaging Pipeline
+# PrivLock — Automated Build & Packaging Pipeline
 # =====================================================================
 
 $ErrorActionPreference = "Stop"
 $ProjectRoot = $PSScriptRoot
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host " Building & Packaging CamMicroBlocker Installer" -ForegroundColor Cyan
+Write-Host " Building & Packaging PrivLock Installer" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 # 1. Run Unit Tests
@@ -22,9 +22,12 @@ Write-Host "`n[2/4] Cleaning previous output directories..." -ForegroundColor Ye
 $PublishDir = "$ProjectRoot\publish_out"
 $InstallerOutDir = "$ProjectRoot\installer_out"
 
-if (Test-Path $PublishDir) { Remove-Item $PublishDir -Recurse -Force }
-if (Test-Path $InstallerOutDir) { Remove-Item $InstallerOutDir -Recurse -Force }
-New-Item -ItemType Directory -Path $InstallerOutDir | Out-Null
+# Terminate running process instances to release file locks before publishing
+Get-Process -Name "PrivLock", "CamMicBlocker" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+
+if (Test-Path $PublishDir) { Remove-Item $PublishDir -Recurse -Force -ErrorAction SilentlyContinue }
+if (Test-Path $InstallerOutDir) { Remove-Item $InstallerOutDir -Recurse -Force -ErrorAction SilentlyContinue }
+if (-not (Test-Path $InstallerOutDir)) { New-Item -ItemType Directory -Path $InstallerOutDir | Out-Null }
 
 # 3. Publish Single-File Self-Contained Binary
 Write-Host "`n[3/4] Publishing single-file self-contained win-x64 release..." -ForegroundColor Yellow
@@ -70,7 +73,7 @@ if (-not $IsccPath) {
 }
 
 Write-Host "Using ISCC compiler: $IsccPath" -ForegroundColor Gray
-& $IsccPath "/O$InstallerOutDir" "/FCamMicroBlocker-Setup-1.0.0" "$ProjectRoot\installer\setup.iss"
+& $IsccPath "/O$InstallerOutDir" "/FPrivLock-Setup-1.0.0" "$ProjectRoot\installer\setup.iss"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Installer compilation failed!"
@@ -79,5 +82,5 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "`n==========================================================" -ForegroundColor Green
 Write-Host " SUCCESS! Installer package generated successfully at:" -ForegroundColor Green
-Write-Host " $InstallerOutDir\CamMicroBlocker-Setup-1.0.0.exe" -ForegroundColor White
+Write-Host " $InstallerOutDir\PrivLock-Setup-1.0.0.exe" -ForegroundColor White
 Write-Host "==========================================================" -ForegroundColor Green

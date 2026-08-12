@@ -1,12 +1,12 @@
 ; =====================================================================
-; CamMicroBlocker — Inno Setup Script
+; PrivLock — Inno Setup Script
 ; Professional Windows Desktop Installer with Hardware Integrity & Admin UAC
 ; =====================================================================
 
-#define MyAppName "CamMicroBlocker"
+#define MyAppName "PrivLock"
 #define MyAppVersion "1.0.0"
-#define MyAppPublisher "CamMicroBlocker"
-#define MyAppExeName "CamMicBlocker.exe"
+#define MyAppPublisher "PrivLock"
+#define MyAppExeName "PrivLock.exe"
 #define MyAppId "{{8E0F7A12-BFB3-4FE8-B9A5-48FD50A15A9A}"
 
 [Setup]
@@ -20,7 +20,7 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=commandline
-OutputBaseFilename=CamMicroBlocker-Setup-1.0.0
+OutputBaseFilename=PrivLock-Setup-1.0.0
 SetupIconFile=..\src\CamMicBlocker\UI\Resources\Icons\app.ico
 UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/max
