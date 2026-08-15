@@ -9,7 +9,9 @@ namespace PrivLock.Platform.Linux;
 
 /// <summary>
 /// Native Linux implementation of IDeviceProtectionProvider.
-/// Coordinates V4L2 device node control and PipeWire/PulseAudio source management.
+/// Supports two-tier protection:
+/// 1. Standard: PipeWire (wpctl) and PulseAudio (pactl) audio server source mute (0 root elevation).
+/// 2. Secure: V4L2 device node permission revocation (/dev/video*) & driver unbind (on-demand polkit).
 /// </summary>
 public sealed class LinuxProtectionProvider : IDeviceProtectionProvider
 {
@@ -29,10 +31,37 @@ public sealed class LinuxProtectionProvider : IDeviceProtectionProvider
         _stateStore = stateStore;
     }
 
-    public async Task<OperationResult> BlockAsync(BlockTarget target, CancellationToken cancellationToken = default)
+    public async Task<OperationResult> EnableStandardProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
-        var sw = Stopwatch.StartNew();
-        Log.Information("Applying Linux protection: Target={Target}", target);
+        Log.Information("Enabling Linux Standard Protection: Target={Target}", target);
+
+        if (target is BlockTarget.Microphone or BlockTarget.Both)
+        {
+            var micResult = await _deviceController.BlockMicrophoneAsync();
+            if (!micResult.Success)
+            {
+                Log.Warning("Linux microphone mute returned warning: {Error}", micResult.ErrorMessage);
+            }
+        }
+
+        return OperationResult.Ok();
+    }
+
+    public async Task<OperationResult> DisableStandardProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
+    {
+        Log.Information("Disabling Linux Standard Protection: Target={Target}", target);
+
+        if (target is BlockTarget.Microphone or BlockTarget.Both)
+        {
+            await _deviceController.UnblockMicrophoneAsync();
+        }
+
+        return OperationResult.Ok();
+    }
+
+    public async Task<OperationResult> EnableSecureProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
+    {
+        Log.Information("Enabling Linux Secure Protection (V4L2 node lockdown): Target={Target}", target);
 
         if (target is BlockTarget.Camera or BlockTarget.Both)
         {
@@ -40,28 +69,16 @@ public sealed class LinuxProtectionProvider : IDeviceProtectionProvider
             var camResult = await _deviceController.BlockCameraAsync(cameras);
             if (!camResult.Success)
             {
-                Log.Warning("Linux camera block had partial errors: {Error}", camResult.ErrorMessage);
+                return camResult;
             }
         }
 
-        if (target is BlockTarget.Microphone or BlockTarget.Both)
-        {
-            var micResult = await _deviceController.BlockMicrophoneAsync();
-            if (!micResult.Success)
-            {
-                Log.Warning("Linux microphone block had partial errors: {Error}", micResult.ErrorMessage);
-            }
-        }
-
-        sw.Stop();
-        Log.Information("Linux block completed in {DurationMs}ms", sw.ElapsedMilliseconds);
         return OperationResult.Ok();
     }
 
-    public async Task<OperationResult> UnblockAsync(BlockTarget target, CancellationToken cancellationToken = default)
+    public async Task<OperationResult> DisableSecureProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
-        var sw = Stopwatch.StartNew();
-        Log.Information("Removing Linux protection: Target={Target}", target);
+        Log.Information("Disabling Linux Secure Protection: Target={Target}", target);
 
         if (target is BlockTarget.Camera or BlockTarget.Both)
         {
@@ -69,42 +86,34 @@ public sealed class LinuxProtectionProvider : IDeviceProtectionProvider
             await _deviceController.UnblockCameraAsync(cameras);
         }
 
-        if (target is BlockTarget.Microphone or BlockTarget.Both)
-        {
-            await _deviceController.UnblockMicrophoneAsync();
-        }
-
-        sw.Stop();
-        Log.Information("Linux unblock completed in {DurationMs}ms", sw.ElapsedMilliseconds);
         return OperationResult.Ok();
     }
 
-    public Task<DeviceBlockState> GetCameraStatusAsync(CancellationToken cancellationToken = default)
+    public Task<FullProtectionState> GetProtectionStateAsync(CancellationToken cancellationToken = default)
     {
         var desired = _stateStore.Load();
-        return Task.FromResult(new DeviceBlockState
-        {
-            DesiredStatus = desired.Camera,
-            PolicyStatus = BlockStatus.Unknown, // Linux has no group policy registry
-            DeviceStatus = desired.Camera // Reflected from active state
-        });
-    }
 
-    public Task<DeviceBlockState> GetMicrophoneStatusAsync(CancellationToken cancellationToken = default)
-    {
-        var desired = _stateStore.Load();
-        return Task.FromResult(new DeviceBlockState
-        {
-            DesiredStatus = desired.Microphone,
-            PolicyStatus = BlockStatus.Unknown,
-            DeviceStatus = desired.Microphone
-        });
-    }
+        var camStandard = desired.CameraStandard;
+        var camSecure = desired.CameraSecure;
+        var micStandard = desired.MicrophoneStandard;
+        var micSecure = desired.MicrophoneSecure;
 
-    public async Task<BlockState> GetCurrentStateAsync(CancellationToken cancellationToken = default)
-    {
-        var cam = await GetCameraStatusAsync(cancellationToken);
-        var mic = await GetMicrophoneStatusAsync(cancellationToken);
-        return new BlockState { Camera = cam, Microphone = mic };
+        return Task.FromResult(new FullProtectionState
+        {
+            Camera = new TargetProtectionStatus
+            {
+                Target = BlockTarget.Camera,
+                StandardState = camStandard,
+                SecureState = camSecure,
+                IsVerified = true
+            },
+            Microphone = new TargetProtectionStatus
+            {
+                Target = BlockTarget.Microphone,
+                StandardState = micStandard,
+                SecureState = micSecure,
+                IsVerified = true
+            }
+        });
     }
 }

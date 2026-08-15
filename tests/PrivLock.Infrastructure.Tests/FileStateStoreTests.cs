@@ -23,9 +23,11 @@ public class FileStateStoreTests : IDisposable
         var store = new FileStateStore(_testDir);
         var state = store.Load();
 
-        Assert.Equal(BlockStatus.Allowed, state.Camera);
-        Assert.Equal(BlockStatus.Allowed, state.Microphone);
-        Assert.False(state.StartWithSystem);
+        Assert.Equal(StandardProtectionState.Inactive, state.CameraStandard);
+        Assert.Equal(SecureProtectionState.Unavailable, state.CameraSecure);
+        Assert.Equal(StandardProtectionState.Inactive, state.MicrophoneStandard);
+        Assert.Equal(SecureProtectionState.Unavailable, state.MicrophoneSecure);
+        Assert.False(state.Autostart);
         Assert.Equal("es", state.Language);
     }
 
@@ -35,18 +37,22 @@ public class FileStateStoreTests : IDisposable
         var store = new FileStateStore(_testDir);
         var original = new DesiredState
         {
-            Camera = BlockStatus.Blocked,
-            Microphone = BlockStatus.Allowed,
-            StartWithSystem = true,
+            CameraStandard = StandardProtectionState.Active,
+            CameraSecure = SecureProtectionState.Active,
+            MicrophoneStandard = StandardProtectionState.Active,
+            MicrophoneSecure = SecureProtectionState.Available,
+            Autostart = true,
             Language = "en"
         };
 
         store.Save(original);
         var loaded = store.Load();
 
-        Assert.Equal(BlockStatus.Blocked, loaded.Camera);
-        Assert.Equal(BlockStatus.Allowed, loaded.Microphone);
-        Assert.True(loaded.StartWithSystem);
+        Assert.Equal(StandardProtectionState.Active, loaded.CameraStandard);
+        Assert.Equal(SecureProtectionState.Active, loaded.CameraSecure);
+        Assert.Equal(StandardProtectionState.Active, loaded.MicrophoneStandard);
+        Assert.Equal(SecureProtectionState.Available, loaded.MicrophoneSecure);
+        Assert.True(loaded.Autostart);
         Assert.Equal("en", loaded.Language);
     }
 
@@ -58,7 +64,7 @@ public class FileStateStoreTests : IDisposable
         var store = new FileStateStore(_testDir);
         var state = store.Load();
 
-        Assert.Equal(BlockStatus.Allowed, state.Camera);
+        Assert.Equal(StandardProtectionState.Inactive, state.CameraStandard);
     }
 
     public void Dispose()

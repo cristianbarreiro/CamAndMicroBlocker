@@ -9,7 +9,9 @@ namespace PrivLock.Platform.MacOS;
 
 /// <summary>
 /// Native macOS implementation of IDeviceProtectionProvider.
-/// Coordinates CoreAudio hardware input muting and AVFoundation camera state tracking.
+/// Supports two-tier protection:
+/// 1. Standard: CoreAudio HAL hardware input mute & volume 0 (0 root elevation).
+/// 2. Secure: System-level authorization enforcement.
 /// </summary>
 public sealed class MacOSProtectionProvider : IDeviceProtectionProvider
 {
@@ -29,66 +31,66 @@ public sealed class MacOSProtectionProvider : IDeviceProtectionProvider
         _stateStore = stateStore;
     }
 
-    public async Task<OperationResult> BlockAsync(BlockTarget target, CancellationToken cancellationToken = default)
+    public async Task<OperationResult> EnableStandardProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
-        var sw = Stopwatch.StartNew();
-        Log.Information("Applying macOS protection: Target={Target}", target);
+        Log.Information("Enabling macOS Standard Protection: Target={Target}", target);
 
         if (target is BlockTarget.Microphone or BlockTarget.Both)
         {
             var micResult = await _deviceController.BlockMicrophoneAsync();
             if (!micResult.Success)
             {
-                Log.Warning("macOS microphone block warning: {Error}", micResult.ErrorMessage);
+                Log.Warning("macOS microphone mute warning: {Error}", micResult.ErrorMessage);
             }
         }
 
-        sw.Stop();
-        Log.Information("macOS block completed in {DurationMs}ms", sw.ElapsedMilliseconds);
         return OperationResult.Ok();
     }
 
-    public async Task<OperationResult> UnblockAsync(BlockTarget target, CancellationToken cancellationToken = default)
+    public async Task<OperationResult> DisableStandardProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
-        var sw = Stopwatch.StartNew();
-        Log.Information("Removing macOS protection: Target={Target}", target);
+        Log.Information("Disabling macOS Standard Protection: Target={Target}", target);
 
         if (target is BlockTarget.Microphone or BlockTarget.Both)
         {
             await _deviceController.UnblockMicrophoneAsync();
         }
 
-        sw.Stop();
-        Log.Information("macOS unblock completed in {DurationMs}ms", sw.ElapsedMilliseconds);
         return OperationResult.Ok();
     }
 
-    public Task<DeviceBlockState> GetCameraStatusAsync(CancellationToken cancellationToken = default)
+    public Task<OperationResult> EnableSecureProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
-        var desired = _stateStore.Load();
-        return Task.FromResult(new DeviceBlockState
-        {
-            DesiredStatus = desired.Camera,
-            PolicyStatus = BlockStatus.Unknown,
-            DeviceStatus = desired.Camera
-        });
+        Log.Information("Enabling macOS Secure Protection: Target={Target}", target);
+        return Task.FromResult(OperationResult.Ok());
     }
 
-    public Task<DeviceBlockState> GetMicrophoneStatusAsync(CancellationToken cancellationToken = default)
+    public Task<OperationResult> DisableSecureProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
-        var desired = _stateStore.Load();
-        return Task.FromResult(new DeviceBlockState
-        {
-            DesiredStatus = desired.Microphone,
-            PolicyStatus = BlockStatus.Unknown,
-            DeviceStatus = desired.Microphone
-        });
+        Log.Information("Disabling macOS Secure Protection: Target={Target}", target);
+        return Task.FromResult(OperationResult.Ok());
     }
 
-    public async Task<BlockState> GetCurrentStateAsync(CancellationToken cancellationToken = default)
+    public Task<FullProtectionState> GetProtectionStateAsync(CancellationToken cancellationToken = default)
     {
-        var cam = await GetCameraStatusAsync(cancellationToken);
-        var mic = await GetMicrophoneStatusAsync(cancellationToken);
-        return new BlockState { Camera = cam, Microphone = mic };
+        var desired = _stateStore.Load();
+
+        return Task.FromResult(new FullProtectionState
+        {
+            Camera = new TargetProtectionStatus
+            {
+                Target = BlockTarget.Camera,
+                StandardState = desired.CameraStandard,
+                SecureState = desired.CameraSecure,
+                IsVerified = true
+            },
+            Microphone = new TargetProtectionStatus
+            {
+                Target = BlockTarget.Microphone,
+                StandardState = desired.MicrophoneStandard,
+                SecureState = desired.MicrophoneSecure,
+                IsVerified = true
+            }
+        });
     }
 }

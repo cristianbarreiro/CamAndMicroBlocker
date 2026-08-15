@@ -52,8 +52,8 @@ public sealed class FileStateStore : IStateStore
                     return new DesiredState();
                 }
 
-                Log.Debug("Loaded state: Camera={Camera}, Microphone={Microphone}, StartWithSystem={Startup}, Lang={Lang}",
-                    state.Camera, state.Microphone, state.StartWithSystem, state.Language);
+                Log.Debug("Loaded state: CamStd={CamStd}, CamSec={CamSec}, MicStd={MicStd}, MicSec={MicSec}, Autostart={Auto}, Lang={Lang}",
+                    state.CameraStandard, state.CameraSecure, state.MicrophoneStandard, state.MicrophoneSecure, state.Autostart, state.Language);
                 return state;
             }
             catch (Exception ex)

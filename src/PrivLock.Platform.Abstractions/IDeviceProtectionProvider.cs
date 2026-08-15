@@ -4,33 +4,33 @@ using PrivLock.Domain.Results;
 namespace PrivLock.Platform.Abstractions;
 
 /// <summary>
-/// Controls blocking, unblocking, and status verification for cameras and microphones.
-/// Implemented natively for each supported operating system.
+/// Unified contract for managing two-tier device protection (Standard and Secure) on the host operating system.
 /// </summary>
 public interface IDeviceProtectionProvider
 {
     /// <summary>
-    /// Blocks the specified target (camera, microphone, or both).
+    /// Enables standard protection for the specified target (operates without administrator rights).
     /// </summary>
-    Task<OperationResult> BlockAsync(BlockTarget target, CancellationToken cancellationToken = default);
+    Task<OperationResult> EnableStandardProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Unblocks the specified target (camera, microphone, or both).
+    /// Disables standard protection for the specified target.
     /// </summary>
-    Task<OperationResult> UnblockAsync(BlockTarget target, CancellationToken cancellationToken = default);
+    Task<OperationResult> DisableStandardProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets the current camera protection state (desired, policy, and hardware/stream status).
+    /// Enables secure/administrator protection for the specified target (requests on-demand elevation).
+    /// Precondition: Standard protection must already be active.
     /// </summary>
-    Task<DeviceBlockState> GetCameraStatusAsync(CancellationToken cancellationToken = default);
+    Task<OperationResult> EnableSecureProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets the current microphone protection state (desired, policy, and hardware/stream status).
+    /// Disables secure/administrator protection for the specified target.
     /// </summary>
-    Task<DeviceBlockState> GetMicrophoneStatusAsync(CancellationToken cancellationToken = default);
+    Task<OperationResult> DisableSecureProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Reconciles and gets the overall blocking state.
+    /// Retrieves the verified protection state for both Camera and Microphone.
     /// </summary>
-    Task<BlockState> GetCurrentStateAsync(CancellationToken cancellationToken = default);
+    Task<FullProtectionState> GetProtectionStateAsync(CancellationToken cancellationToken = default);
 }

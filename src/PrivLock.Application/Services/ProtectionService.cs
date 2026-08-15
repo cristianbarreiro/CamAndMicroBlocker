@@ -9,8 +9,8 @@ using Serilog.Context;
 namespace PrivLock.Application.Services;
 
 /// <summary>
-/// Core application service orchestrating camera and microphone protection across all platforms.
-/// Completely decoupled from operating system APIs and UI frameworks.
+/// Core application service orchestrating two-tier protection workflows (Standard and Secure),
+/// enforcing strict business rules, measuring execution durations, and notifying subscribers.
 /// </summary>
 public sealed class ProtectionService
 {
@@ -20,6 +20,11 @@ public sealed class ProtectionService
     private readonly IDeviceDetector _deviceDetector;
     private readonly IPlatformCapabilityProvider _capabilityProvider;
     private readonly IStateStore _stateStore;
+
+    public event Action<FullProtectionState>? StateChanged;
+
+    public PlatformCapabilities Capabilities => _capabilityProvider.Capabilities;
+    public PlatformInfo PlatformInfo => _capabilityProvider.PlatformInfo;
 
     public ProtectionService(
         IDeviceProtectionProvider protectionProvider,
@@ -34,147 +39,240 @@ public sealed class ProtectionService
     }
 
     /// <summary>
-    /// Fired when the protection state changes.
+    /// Enables standard protection (without elevated permissions).
+    /// Transitions Secure Protection from Unavailable to Available.
     /// </summary>
-    public event Action<BlockState>? StateChanged;
-
-    /// <summary>
-    /// Declarative security capabilities of the current platform.
-    /// </summary>
-    public PlatformCapabilities Capabilities => _capabilityProvider.Capabilities;
-
-    /// <summary>
-    /// Diagnostic information about the running environment.
-    /// </summary>
-    public PlatformInfo PlatformInfo => _capabilityProvider.PlatformInfo;
-
-    /// <summary>
-    /// Blocks the specified target (camera, microphone, or both).
-    /// </summary>
-    public async Task<OperationResult> BlockAsync(BlockTarget target, CancellationToken ct = default)
+    public async Task<OperationResult> EnableStandardProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
-        var opId = $"Op-{Guid.NewGuid():N}"[..11];
-        using (LogContext.PushProperty("OperationId", opId))
-        {
-            var sw = Stopwatch.StartNew();
-            Log.Information("Block requested: Target={Target}, OperationId={OperationId}", target, opId);
+        var opId = $"Op-StdEn-{Guid.NewGuid():N}"[..16];
+        using var _ = LogContext.PushProperty("OperationId", opId);
+        var sw = Stopwatch.StartNew();
 
-            // 1. Delegate to the platform-specific native protection provider
-            var result = await _protectionProvider.BlockAsync(target, ct);
+        Log.Information("Enabling standard protection for target: {Target}", target);
+
+        try
+        {
+            var result = await _protectionProvider.EnableStandardProtectionAsync(target, cancellationToken);
             if (!result.Success)
             {
                 sw.Stop();
-                Log.Error("Block failed: Target={Target}, Error={Error}, DurationMs={DurationMs}",
-                    target, result.ErrorMessage, sw.ElapsedMilliseconds);
+                Log.Error("Failed to enable standard protection: {Error}", result.ErrorMessage);
                 return result;
             }
 
-            // 2. Persist desired state
+            // Update persisted desired state
             var desired = _stateStore.Load();
             if (target is BlockTarget.Camera or BlockTarget.Both)
-                desired.Camera = BlockStatus.Blocked;
+            {
+                desired.CameraStandard = StandardProtectionState.Active;
+                if (desired.CameraSecure == SecureProtectionState.Unavailable)
+                    desired.CameraSecure = SecureProtectionState.Available;
+            }
             if (target is BlockTarget.Microphone or BlockTarget.Both)
-                desired.Microphone = BlockStatus.Blocked;
+            {
+                desired.MicrophoneStandard = StandardProtectionState.Active;
+                if (desired.MicrophoneSecure == SecureProtectionState.Unavailable)
+                    desired.MicrophoneSecure = SecureProtectionState.Available;
+            }
             _stateStore.Save(desired);
 
-            // 3. Reconcile and notify subscribers
-            var state = await _protectionProvider.GetCurrentStateAsync(ct);
-            StateChanged?.Invoke(state);
+            // Fetch and verify actual state
+            var newState = await _protectionProvider.GetProtectionStateAsync(cancellationToken);
+            StateChanged?.Invoke(newState);
 
             sw.Stop();
-            Log.Information("Block completed successfully: Target={Target}, DurationMs={DurationMs}",
-                target, sw.ElapsedMilliseconds);
-
-            return result;
+            Log.Information("Standard protection enabled successfully in {DurationMs}ms", sw.ElapsedMilliseconds);
+            return OperationResult.Ok();
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            Log.Error(ex, "Unexpected error enabling standard protection");
+            return OperationResult.Fail(ex.Message);
         }
     }
 
     /// <summary>
-    /// Unblocks the specified target (camera, microphone, or both).
+    /// Disables standard protection.
+    /// Transitions Secure Protection back to Unavailable.
     /// </summary>
-    public async Task<OperationResult> UnblockAsync(BlockTarget target, CancellationToken ct = default)
+    public async Task<OperationResult> DisableStandardProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
-        var opId = $"Op-{Guid.NewGuid():N}"[..11];
-        using (LogContext.PushProperty("OperationId", opId))
-        {
-            var sw = Stopwatch.StartNew();
-            Log.Information("Unblock requested: Target={Target}, OperationId={OperationId}", target, opId);
+        var opId = $"Op-StdDis-{Guid.NewGuid():N}"[..16];
+        using var _ = LogContext.PushProperty("OperationId", opId);
+        var sw = Stopwatch.StartNew();
 
-            // 1. Delegate to the platform-specific native protection provider
-            var result = await _protectionProvider.UnblockAsync(target, ct);
+        Log.Information("Disabling standard protection for target: {Target}", target);
+
+        try
+        {
+            var current = await _protectionProvider.GetProtectionStateAsync(cancellationToken);
+
+            // If secure protection was active, disable it first to ensure clean state
+            if (target is BlockTarget.Camera or BlockTarget.Both && current.Camera.SecureState == SecureProtectionState.Active)
+            {
+                Log.Information("Disabling active camera secure protection as part of standard teardown");
+                await _protectionProvider.DisableSecureProtectionAsync(BlockTarget.Camera, cancellationToken);
+            }
+            if (target is BlockTarget.Microphone or BlockTarget.Both && current.Microphone.SecureState == SecureProtectionState.Active)
+            {
+                Log.Information("Disabling active microphone secure protection as part of standard teardown");
+                await _protectionProvider.DisableSecureProtectionAsync(BlockTarget.Microphone, cancellationToken);
+            }
+
+            var result = await _protectionProvider.DisableStandardProtectionAsync(target, cancellationToken);
             if (!result.Success)
             {
                 sw.Stop();
-                Log.Error("Unblock failed: Target={Target}, Error={Error}, DurationMs={DurationMs}",
-                    target, result.ErrorMessage, sw.ElapsedMilliseconds);
+                Log.Error("Failed to disable standard protection: {Error}", result.ErrorMessage);
                 return result;
             }
 
-            // 2. Persist desired state
+            // Update persisted desired state
             var desired = _stateStore.Load();
             if (target is BlockTarget.Camera or BlockTarget.Both)
-                desired.Camera = BlockStatus.Allowed;
+            {
+                desired.CameraStandard = StandardProtectionState.Inactive;
+                desired.CameraSecure = SecureProtectionState.Unavailable;
+            }
             if (target is BlockTarget.Microphone or BlockTarget.Both)
-                desired.Microphone = BlockStatus.Allowed;
+            {
+                desired.MicrophoneStandard = StandardProtectionState.Inactive;
+                desired.MicrophoneSecure = SecureProtectionState.Unavailable;
+            }
             _stateStore.Save(desired);
 
-            // 3. Reconcile and notify subscribers
-            var state = await _protectionProvider.GetCurrentStateAsync(ct);
-            StateChanged?.Invoke(state);
+            var newState = await _protectionProvider.GetProtectionStateAsync(cancellationToken);
+            StateChanged?.Invoke(newState);
 
             sw.Stop();
-            Log.Information("Unblock completed successfully: Target={Target}, DurationMs={DurationMs}",
-                target, sw.ElapsedMilliseconds);
-
-            return result;
+            Log.Information("Standard protection disabled successfully in {DurationMs}ms", sw.ElapsedMilliseconds);
+            return OperationResult.Ok();
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            Log.Error(ex, "Unexpected error disabling standard protection");
+            return OperationResult.Fail(ex.Message);
         }
     }
 
     /// <summary>
-    /// Toggles the blocking state. If currently blocked -> unblock; if allowed -> block.
+    /// Enables secure / administrator protection (requests on-demand elevation).
+    /// Enforces precondition: Standard Protection MUST be active first.
     /// </summary>
-    public async Task<OperationResult> ToggleAsync(BlockTarget target = BlockTarget.Both, CancellationToken ct = default)
+    public async Task<OperationResult> EnableSecureProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
-        var currentState = await GetCurrentStateAsync(ct);
-        bool shouldBlock = target switch
-        {
-            BlockTarget.Camera => currentState.Camera.EffectiveStatus != BlockStatus.Blocked,
-            BlockTarget.Microphone => currentState.Microphone.EffectiveStatus != BlockStatus.Blocked,
-            BlockTarget.Both => !currentState.AllBlocked,
-            _ => true
-        };
+        var opId = $"Op-SecEn-{Guid.NewGuid():N}"[..16];
+        using var _ = LogContext.PushProperty("OperationId", opId);
+        var sw = Stopwatch.StartNew();
 
-        return shouldBlock
-            ? await BlockAsync(target, ct)
-            : await UnblockAsync(target, ct);
-    }
+        Log.Information("Requesting secure protection for target: {Target}", target);
 
-    /// <summary>
-    /// Gets the current verified system blocking state.
-    /// </summary>
-    public async Task<BlockState> GetCurrentStateAsync(CancellationToken ct = default)
-    {
-        var state = await _protectionProvider.GetCurrentStateAsync(ct);
-        if (!state.IsFullyConsistent)
+        try
         {
-            Log.Warning("State inconsistency detected: Camera(Desired={CD}, Effective={CE}), Mic(Desired={MD}, Effective={ME})",
-                state.Camera.DesiredStatus, state.Camera.EffectiveStatus,
-                state.Microphone.DesiredStatus, state.Microphone.EffectiveStatus);
+            var current = await _protectionProvider.GetProtectionStateAsync(cancellationToken);
+
+            // Precondition validation: Standard protection must be Active
+            if (target is BlockTarget.Camera or BlockTarget.Both && current.Camera.StandardState != StandardProtectionState.Active)
+            {
+                sw.Stop();
+                var msg = "You must enable Standard Protection before enabling Secure Protection for Camera.";
+                Log.Warning(msg);
+                return OperationResult.Fail(msg);
+            }
+
+            if (target is BlockTarget.Microphone or BlockTarget.Both && current.Microphone.StandardState != StandardProtectionState.Active)
+            {
+                sw.Stop();
+                var msg = "You must enable Standard Protection before enabling Secure Protection for Microphone.";
+                Log.Warning(msg);
+                return OperationResult.Fail(msg);
+            }
+
+            // Perform privileged secure protection (on-demand elevation)
+            var result = await _protectionProvider.EnableSecureProtectionAsync(target, cancellationToken);
+            if (!result.Success)
+            {
+                sw.Stop();
+                Log.Error("Failed to enable secure protection: {Error}", result.ErrorMessage);
+                return result;
+            }
+
+            // Update persisted desired state
+            var desired = _stateStore.Load();
+            if (target is BlockTarget.Camera or BlockTarget.Both)
+                desired.CameraSecure = SecureProtectionState.Active;
+            if (target is BlockTarget.Microphone or BlockTarget.Both)
+                desired.MicrophoneSecure = SecureProtectionState.Active;
+            _stateStore.Save(desired);
+
+            var newState = await _protectionProvider.GetProtectionStateAsync(cancellationToken);
+            StateChanged?.Invoke(newState);
+
+            sw.Stop();
+            Log.Information("Secure protection enabled and verified in {DurationMs}ms", sw.ElapsedMilliseconds);
+            return OperationResult.Ok();
         }
-        return state;
+        catch (Exception ex)
+        {
+            sw.Stop();
+            Log.Error(ex, "Unexpected error enabling secure protection");
+            return OperationResult.Fail(ex.Message);
+        }
     }
 
     /// <summary>
-    /// Enumerates detected physical/system devices for the specified target.
+    /// Disables secure / administrator protection.
+    /// Standard protection remains active.
     /// </summary>
-    public async Task<IReadOnlyList<DeviceInfo>> GetDetectedDevicesAsync(BlockTarget target = BlockTarget.Both, CancellationToken ct = default)
+    public async Task<OperationResult> DisableSecureProtectionAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
-        return target switch
+        var opId = $"Op-SecDis-{Guid.NewGuid():N}"[..16];
+        using var _ = LogContext.PushProperty("OperationId", opId);
+        var sw = Stopwatch.StartNew();
+
+        Log.Information("Disabling secure protection for target: {Target}", target);
+
+        try
         {
-            BlockTarget.Camera => await _deviceDetector.DetectCamerasAsync(ct),
-            BlockTarget.Microphone => await _deviceDetector.DetectMicrophonesAsync(ct),
-            BlockTarget.Both => await _deviceDetector.DetectAllAsync(ct),
-            _ => []
-        };
+            var result = await _protectionProvider.DisableSecureProtectionAsync(target, cancellationToken);
+            if (!result.Success)
+            {
+                sw.Stop();
+                Log.Error("Failed to disable secure protection: {Error}", result.ErrorMessage);
+                return result;
+            }
+
+            var desired = _stateStore.Load();
+            if (target is BlockTarget.Camera or BlockTarget.Both)
+                desired.CameraSecure = SecureProtectionState.Available;
+            if (target is BlockTarget.Microphone or BlockTarget.Both)
+                desired.MicrophoneSecure = SecureProtectionState.Available;
+            _stateStore.Save(desired);
+
+            var newState = await _protectionProvider.GetProtectionStateAsync(cancellationToken);
+            StateChanged?.Invoke(newState);
+
+            sw.Stop();
+            Log.Information("Secure protection disabled successfully in {DurationMs}ms", sw.ElapsedMilliseconds);
+            return OperationResult.Ok();
+        }
+        catch (Exception ex)
+        {
+            sw.Stop();
+            Log.Error(ex, "Unexpected error disabling secure protection");
+            return OperationResult.Fail(ex.Message);
+        }
+    }
+
+    public Task<FullProtectionState> GetCurrentStateAsync(CancellationToken cancellationToken = default)
+    {
+        return _protectionProvider.GetProtectionStateAsync(cancellationToken);
+    }
+
+    public Task<IReadOnlyList<DeviceInfo>> GetDetectedDevicesAsync(CancellationToken cancellationToken = default)
+    {
+        return _deviceDetector.DetectAllAsync(cancellationToken);
     }
 }

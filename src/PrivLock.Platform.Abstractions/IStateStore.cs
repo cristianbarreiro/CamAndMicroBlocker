@@ -3,29 +3,25 @@ using PrivLock.Domain.Models;
 namespace PrivLock.Platform.Abstractions;
 
 /// <summary>
-/// Persists the user's desired blocking state and settings across application restarts.
+/// Represents the user's persisted protection preferences across application restarts.
 /// </summary>
-public interface IStateStore
+public sealed record DesiredState
 {
-    /// <summary>
-    /// Loads the persisted desired state, returning defaults if not found.
-    /// </summary>
-    DesiredState Load();
+    public StandardProtectionState CameraStandard { get; set; } = StandardProtectionState.Inactive;
+    public SecureProtectionState CameraSecure { get; set; } = SecureProtectionState.Unavailable;
 
-    /// <summary>
-    /// Saves the current desired state to persistent storage.
-    /// </summary>
-    void Save(DesiredState state);
+    public StandardProtectionState MicrophoneStandard { get; set; } = StandardProtectionState.Inactive;
+    public SecureProtectionState MicrophoneSecure { get; set; } = SecureProtectionState.Unavailable;
+
+    public string Language { get; set; } = "es";
+    public bool Autostart { get; set; }
 }
 
 /// <summary>
-/// User configuration and desired blocking state persisted across sessions.
+/// Contract for persisting user desired state and application settings to storage.
 /// </summary>
-public sealed class DesiredState
+public interface IStateStore
 {
-    public BlockStatus Camera { get; set; } = BlockStatus.Allowed;
-    public BlockStatus Microphone { get; set; } = BlockStatus.Allowed;
-    public bool StartWithSystem { get; set; } = false;
-    public string Language { get; set; } = "es";
-    public bool StartMinimized { get; set; } = false;
+    DesiredState Load();
+    void Save(DesiredState state);
 }

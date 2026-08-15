@@ -38,24 +38,40 @@ public class OnDemandElevationTests
             IsElevated = false
         });
 
-        _stateStoreMock.Setup(s => s.Load()).Returns(new DesiredState());
+        _stateStoreMock.Setup(s => s.Load()).Returns(new DesiredState
+        {
+            CameraStandard = StandardProtectionState.Active,
+            CameraSecure = SecureProtectionState.Available,
+            MicrophoneStandard = StandardProtectionState.Active,
+            MicrophoneSecure = SecureProtectionState.Available
+        });
     }
 
     [Fact]
-    public async Task BlockAsync_WhenStandardUser_DelegatesToProviderWhichHandlesOnDemandElevation()
+    public async Task EnableSecureProtection_WhenStandardActive_TriggersProviderElevationAndSavesState()
     {
         // Arrange
         _protectionProviderMock
-            .Setup(p => p.BlockAsync(BlockTarget.Both, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(OperationResult.Ok());
+            .Setup(p => p.GetProtectionStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FullProtectionState
+            {
+                Camera = new TargetProtectionStatus
+                {
+                    Target = BlockTarget.Camera,
+                    StandardState = StandardProtectionState.Active,
+                    SecureState = SecureProtectionState.Available
+                },
+                Microphone = new TargetProtectionStatus
+                {
+                    Target = BlockTarget.Microphone,
+                    StandardState = StandardProtectionState.Active,
+                    SecureState = SecureProtectionState.Available
+                }
+            });
 
         _protectionProviderMock
-            .Setup(p => p.GetCurrentStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BlockState
-            {
-                Camera = new DeviceBlockState { DesiredStatus = BlockStatus.Blocked, PolicyStatus = BlockStatus.Blocked },
-                Microphone = new DeviceBlockState { DesiredStatus = BlockStatus.Blocked, PolicyStatus = BlockStatus.Blocked }
-            });
+            .Setup(p => p.EnableSecureProtectionAsync(BlockTarget.Camera, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(OperationResult.Ok());
 
         var service = new ProtectionService(
             _protectionProviderMock.Object,
@@ -64,29 +80,39 @@ public class OnDemandElevationTests
             _stateStoreMock.Object);
 
         // Act
-        var result = await service.BlockAsync(BlockTarget.Both);
+        var result = await service.EnableSecureProtectionAsync(BlockTarget.Camera);
 
         // Assert
         Assert.True(result.Success);
-        _protectionProviderMock.Verify(p => p.BlockAsync(BlockTarget.Both, It.IsAny<CancellationToken>()), Times.Once);
-        _stateStoreMock.Verify(s => s.Save(It.Is<DesiredState>(d => d.Camera == BlockStatus.Blocked && d.Microphone == BlockStatus.Blocked)), Times.Once);
+        _protectionProviderMock.Verify(p => p.EnableSecureProtectionAsync(BlockTarget.Camera, It.IsAny<CancellationToken>()), Times.Once);
+        _stateStoreMock.Verify(s => s.Save(It.Is<DesiredState>(d => d.CameraSecure == SecureProtectionState.Active)), Times.Once);
     }
 
     [Fact]
-    public async Task BlockAsync_WhenUserCancelsElevation_ReturnsFailureWithoutModifyingSavedState()
+    public async Task EnableSecureProtection_WhenUserCancelsElevation_ReturnsFailureWithoutModifyingSavedState()
     {
         // Arrange
         _protectionProviderMock
-            .Setup(p => p.BlockAsync(BlockTarget.Camera, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(OperationResult.Fail("Operation cancelled: Administrator permissions were denied."));
+            .Setup(p => p.GetProtectionStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FullProtectionState
+            {
+                Camera = new TargetProtectionStatus
+                {
+                    Target = BlockTarget.Camera,
+                    StandardState = StandardProtectionState.Active,
+                    SecureState = SecureProtectionState.Available
+                },
+                Microphone = new TargetProtectionStatus
+                {
+                    Target = BlockTarget.Microphone,
+                    StandardState = StandardProtectionState.Active,
+                    SecureState = SecureProtectionState.Available
+                }
+            });
 
         _protectionProviderMock
-            .Setup(p => p.GetCurrentStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BlockState
-            {
-                Camera = new DeviceBlockState { DesiredStatus = BlockStatus.Allowed, PolicyStatus = BlockStatus.Allowed },
-                Microphone = new DeviceBlockState { DesiredStatus = BlockStatus.Allowed, PolicyStatus = BlockStatus.Allowed }
-            });
+            .Setup(p => p.EnableSecureProtectionAsync(BlockTarget.Camera, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(OperationResult.Fail("Operation cancelled: Administrator permissions were denied."));
 
         var service = new ProtectionService(
             _protectionProviderMock.Object,
@@ -95,7 +121,7 @@ public class OnDemandElevationTests
             _stateStoreMock.Object);
 
         // Act
-        var result = await service.BlockAsync(BlockTarget.Camera);
+        var result = await service.EnableSecureProtectionAsync(BlockTarget.Camera);
 
         // Assert
         Assert.False(result.Success);

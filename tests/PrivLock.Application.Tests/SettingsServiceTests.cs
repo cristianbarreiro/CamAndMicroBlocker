@@ -30,7 +30,7 @@ public class SettingsServiceTests
 
         Assert.True(result.Success);
         _autostartMock.Verify(a => a.EnableAutostart(), Times.Once);
-        _storeMock.Verify(s => s.Save(It.Is<DesiredState>(ds => ds.StartWithSystem)), Times.Once);
+        _storeMock.Verify(s => s.Save(It.Is<DesiredState>(ds => ds.Autostart)), Times.Once);
     }
 
     [Fact]
@@ -42,6 +42,6 @@ public class SettingsServiceTests
 
         Assert.True(result.Success);
         _autostartMock.Verify(a => a.DisableAutostart(), Times.Once);
-        _storeMock.Verify(s => s.Save(It.Is<DesiredState>(ds => !ds.StartWithSystem)), Times.Once);
+        _storeMock.Verify(s => s.Save(It.Is<DesiredState>(ds => !ds.Autostart)), Times.Once);
     }
 }

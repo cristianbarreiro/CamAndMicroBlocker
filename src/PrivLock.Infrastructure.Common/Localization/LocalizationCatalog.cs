@@ -1,107 +1,116 @@
 namespace PrivLock.Infrastructure.Common.Localization;
 
 /// <summary>
-/// Pure C# in-memory localization provider containing built-in English and Spanish translation catalogs.
+/// Cross-platform in-memory dictionary catalogs for UI localization (ES and EN).
+/// Completely decoupled from WPF ResourceDictionaries or OS-specific formats.
 /// </summary>
 public static class LocalizationCatalog
 {
-    private static readonly Dictionary<string, string> StringsEn = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["AppTitle"] = "PrivLock",
-        ["AppSubtitle"] = "Camera & Microphone Blocker",
-        ["StatusBlocked"] = "🔒 Blocked",
-        ["StatusAllowed"] = "✅ Allowed",
-        ["StatusUnknown"] = "⚠️ Unknown",
-        ["ProtectionActive"] = "Protection active (Both Blocked)",
-        ["ProtectionInactive"] = "Protection inactive (Both Allowed)",
-        ["MixedState"] = "Mixed state",
-        ["CameraTitle"] = "Camera",
-        ["CameraSubtitle"] = "Webcams and video capture devices",
-        ["MicrophoneTitle"] = "Microphone",
-        ["MicrophoneSubtitle"] = "Audio recording and input endpoints",
-        ["MasterToggle"] = "Block All (Camera & Microphone)",
-        ["MasterSubtitle"] = "Simultaneous protection toggle",
-        ["DetectedDevices"] = "Detected Hardware Devices",
-        ["NoDevicesDetected"] = "No devices detected",
-        ["DeviceEnabled"] = "ENABLED",
-        ["DeviceDisabled"] = "DISABLED",
-        ["DevicePresent"] = "PRESENT",
-        ["StartWithSystem"] = "Start with system",
-        ["Language"] = "Language",
-        ["CapabilitiesTitle"] = "Platform Security Capabilities",
-        ["CapabilityHardware"] = "Hardware PnP Control",
-        ["CapabilityPolicy"] = "System Privacy Policy",
-        ["CapabilityAudioMute"] = "Audio Server Mute & Lock",
-        ["CapabilityElevation"] = "Elevated Privileges Required",
-        ["TrayShowApp"] = "Show Application",
-        ["TrayHideApp"] = "Hide Application",
-        ["TrayLockBoth"] = "Lock (Both)",
-        ["TrayUnlockBoth"] = "Unlock (Both)",
-        ["TrayLockUnlock"] = "Lock / Unlock",
-        ["TrayExit"] = "Exit Application",
-        ["NotifyBothBlocked"] = "Camera & Microphone: BLOCKED",
-        ["NotifyBothAllowed"] = "Camera & Microphone: ALLOWED",
-        ["NotifyCameraBlocked"] = "Camera: BLOCKED",
-        ["NotifyMicBlocked"] = "Microphone: BLOCKED",
-        ["ErrorElevationDenied"] = "Administrator permission was denied.",
-        ["ErrorOperationFailed"] = "Operation failed"
-    };
-
-    private static readonly Dictionary<string, string> StringsEs = new(StringComparer.OrdinalIgnoreCase)
+    public static readonly IReadOnlyDictionary<string, string> StringsEs = new Dictionary<string, string>
     {
         ["AppTitle"] = "PrivLock",
         ["AppSubtitle"] = "Bloqueador de Cámara y Micrófono",
+
+        // Sections
+        ["CameraTitle"] = "Cámara",
+        ["CameraSubtitle"] = "Protección de webcam y sensores de video",
+        ["MicrophoneTitle"] = "Micrófono",
+        ["MicrophoneSubtitle"] = "Protección de micrófonos y captura de audio",
+
+        // Status
         ["StatusBlocked"] = "🔒 Bloqueado",
         ["StatusAllowed"] = "✅ Permitido",
-        ["StatusUnknown"] = "⚠️ Desconocido",
-        ["ProtectionActive"] = "Protección activa (Ambos bloqueados)",
-        ["ProtectionInactive"] = "Protección inactiva (Ambos permitidos)",
-        ["MixedState"] = "Estado mixto",
-        ["CameraTitle"] = "Cámara",
-        ["CameraSubtitle"] = "Cámaras web y dispositivos de captura de video",
-        ["MicrophoneTitle"] = "Micrófono",
-        ["MicrophoneSubtitle"] = "Entradas de audio y micrófonos del sistema",
-        ["MasterToggle"] = "Bloquear todo (Cámara y Micrófono)",
-        ["MasterSubtitle"] = "Control simultáneo de protección",
+
+        // Standard Protection
+        ["StandardProtectionTitle"] = "Protección Estándar",
+        ["StandardProtectionDesc"] = "Protección cotidiana sin permisos elevados",
+        ["EnableStandard"] = "Activar Estándar",
+        ["DisableStandard"] = "Desactivar Estándar",
+        ["StatusStandardActive"] = "● Estándar Activa",
+        ["StatusStandardInactive"] = "○ Estándar Inactiva",
+
+        // Secure Protection
+        ["SecureProtectionTitle"] = "Protección Segura (Admin)",
+        ["SecureProtectionDesc"] = "Aislamiento físico y directivas de sistema de bajo nivel",
+        ["EnableSecure"] = "🔒 Activar Protección Segura",
+        ["DisableSecure"] = "Desactivar Segura",
+        ["StatusSecureUnavailable"] = "🔒 No disponible (Activa estándar primero)",
+        ["StatusSecureAvailable"] = "○ Disponible para activar",
+        ["StatusSecureActive"] = "🛡️ Segura Activa (Reforzada)",
+        ["SecureRequirementHint"] = "Activa primero la Protección Estándar",
+
+        // Devices
         ["DetectedDevices"] = "Dispositivos de Hardware Detectados",
-        ["NoDevicesDetected"] = "No se detectaron dispositivos",
         ["DeviceEnabled"] = "HABILITADO",
-        ["DeviceDisabled"] = "DESHABILITADO",
-        ["DevicePresent"] = "PRESENTE",
+        ["DeviceDisabled"] = "BLOQUEADO",
+
+        // Settings & Footers
         ["StartWithSystem"] = "Iniciar con el sistema",
         ["Language"] = "Idioma",
-        ["CapabilitiesTitle"] = "Capacidades de Seguridad de la Plataforma",
-        ["CapabilityHardware"] = "Control Hardware PnP",
-        ["CapabilityPolicy"] = "Directivas de Privacidad del SO",
-        ["CapabilityAudioMute"] = "Silenciamiento/Bloqueo Servidor Audio",
-        ["CapabilityElevation"] = "Requiere Privilegios Elevados",
-        ["TrayShowApp"] = "Mostrar Aplicación",
-        ["TrayHideApp"] = "Ocultar Aplicación",
-        ["TrayLockBoth"] = "Bloquear (Ambos)",
-        ["TrayUnlockBoth"] = "Desbloquear (Ambos)",
-        ["TrayLockUnlock"] = "Bloquear / Desbloquear",
-        ["TrayExit"] = "Salir de la Aplicación",
-        ["NotifyBothBlocked"] = "Cámara y Micrófono: BLOQUEADOS",
-        ["NotifyBothAllowed"] = "Cámara y Micrófono: PERMITIDOS",
-        ["NotifyCameraBlocked"] = "Cámara: BLOQUEADA",
-        ["NotifyMicBlocked"] = "Micrófono: BLOQUEADO",
-        ["ErrorElevationDenied"] = "Se denegaron los permisos de administrador.",
-        ["ErrorOperationFailed"] = "La operación ha fallado"
+        ["CapabilitiesTitle"] = "Capacidades del Sistema",
+
+        // Notifications & Errors
+        ["ElevationCancelled"] = "Operación cancelada: Se denegaron los permisos de administrador.",
+        ["StandardRequiredFirst"] = "Debes activar la Protección Estándar antes de activar la Protección Segura."
     };
 
-    public static string Get(string key, string language = "es", string fallback = "")
+    public static readonly IReadOnlyDictionary<string, string> StringsEn = new Dictionary<string, string>
     {
-        var dict = language.Equals("en", StringComparison.OrdinalIgnoreCase) ? StringsEn : StringsEs;
-        if (dict.TryGetValue(key, out var val))
-            return val;
+        ["AppTitle"] = "PrivLock",
+        ["AppSubtitle"] = "Camera & Microphone Blocker",
 
-        // Fallback to English dictionary before empty string
-        if (StringsEn.TryGetValue(key, out var enVal))
-            return enVal;
+        // Sections
+        ["CameraTitle"] = "Camera",
+        ["CameraSubtitle"] = "Webcam and video capture protection",
+        ["MicrophoneTitle"] = "Microphone",
+        ["MicrophoneSubtitle"] = "Microphone and audio capture protection",
 
-        return string.IsNullOrEmpty(fallback) ? key : fallback;
+        // Status
+        ["StatusBlocked"] = "🔒 Blocked",
+        ["StatusAllowed"] = "✅ Allowed",
+
+        // Standard Protection
+        ["StandardProtectionTitle"] = "Standard Protection",
+        ["StandardProtectionDesc"] = "Everyday protection without elevated permissions",
+        ["EnableStandard"] = "Enable Standard",
+        ["DisableStandard"] = "Disable Standard",
+        ["StatusStandardActive"] = "● Standard Active",
+        ["StatusStandardInactive"] = "○ Standard Inactive",
+
+        // Secure Protection
+        ["SecureProtectionTitle"] = "Secure Protection (Admin)",
+        ["SecureProtectionDesc"] = "Physical isolation and low-level system policies",
+        ["EnableSecure"] = "🔒 Enable Secure Protection",
+        ["DisableSecure"] = "Disable Secure",
+        ["StatusSecureUnavailable"] = "🔒 Unavailable (Enable standard first)",
+        ["StatusSecureAvailable"] = "○ Available to enable",
+        ["StatusSecureActive"] = "🛡️ Secure Active (Hardened)",
+        ["SecureRequirementHint"] = "Enable Standard Protection first",
+
+        // Devices
+        ["DetectedDevices"] = "Detected Hardware Devices",
+        ["DeviceEnabled"] = "ENABLED",
+        ["DeviceDisabled"] = "BLOCKED",
+
+        // Settings & Footers
+        ["StartWithSystem"] = "Start with system",
+        ["Language"] = "Language",
+        ["CapabilitiesTitle"] = "Platform Capabilities",
+
+        // Notifications & Errors
+        ["ElevationCancelled"] = "Operation cancelled: Administrator permissions were denied.",
+        ["StandardRequiredFirst"] = "You must enable Standard Protection before enabling Secure Protection."
+    };
+
+    public static string Get(string key, string culture = "es", string fallback = "")
+    {
+        var dict = culture.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? StringsEn : StringsEs;
+        return dict.TryGetValue(key, out var val) ? val : (string.IsNullOrEmpty(fallback) ? key : fallback);
     }
 
-    public static IReadOnlyDictionary<string, string> GetAll(string language = "es") =>
-        language.Equals("en", StringComparison.OrdinalIgnoreCase) ? StringsEn : StringsEs;
+    public static string GetString(string key, string culture = "es", string fallback = "") =>
+        Get(key, culture, fallback);
+
+    public static IReadOnlyDictionary<string, string> GetAll(string culture = "es") =>
+        culture.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? StringsEn : StringsEs;
 }

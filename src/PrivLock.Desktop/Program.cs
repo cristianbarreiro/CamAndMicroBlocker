@@ -19,8 +19,18 @@ public static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        // 1. Check for internal privileged execution flag (--privileged-exec)
+        // 1. Check for internal privileged worker or execution flag
         // This allows on-demand elevated execution within the SAME single executable.
+        if (args.Length >= 2 && args[0].Equals("--privileged-worker", StringComparison.OrdinalIgnoreCase))
+        {
+            var pipeName = args[1];
+            if (OperatingSystem.IsWindows())
+            {
+                return Platform.Windows.Privileged.WindowsPrivilegedWorker.Run(pipeName);
+            }
+            return 1;
+        }
+
         if (args.Length >= 3 && args[0].Equals("--privileged-exec", StringComparison.OrdinalIgnoreCase))
         {
             return HandlePrivilegedExecution(args);
@@ -66,7 +76,8 @@ public static class Program
                 var protectionService = serviceProvider.GetRequiredService<ProtectionService>();
                 var settingsService = serviceProvider.GetRequiredService<SettingsService>();
 
-                protectionService.UnblockAsync(BlockTarget.Both).GetAwaiter().GetResult();
+                protectionService.DisableStandardProtectionAsync(BlockTarget.Both).GetAwaiter().GetResult();
+                protectionService.DisableSecureProtectionAsync(BlockTarget.Both).GetAwaiter().GetResult();
                 settingsService.SetAutostart(false);
 
                 Log.Information("Cleanup complete. Exiting.");
@@ -94,6 +105,10 @@ public static class Program
                 .StartWithClassicDesktopLifetime(args);
 
             singleInstanceGuard.Release();
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Platform.Windows.Privileged.WindowsPrivilegedSession.Instance.CloseSession();
+            }
             Log.Information("=== PrivLock Exited Cleanly (Code: {Code}) ===", exitCode);
             Log.CloseAndFlush();
             return exitCode;
@@ -193,7 +208,9 @@ public static class Program
     {
         services.AddSingleton<Platform.Windows.Devices.WindowsDeviceDetector>();
         services.AddSingleton<Platform.Windows.Devices.WindowsDeviceController>();
+        services.AddSingleton<Platform.Windows.Devices.WindowsCoreAudioController>();
         services.AddSingleton<Platform.Windows.Policies.WindowsPolicyManager>();
+        services.AddSingleton<Platform.Windows.Policies.WindowsUserPrivacyManager>();
 
         services.AddSingleton<IDeviceDetector>(sp => sp.GetRequiredService<Platform.Windows.Devices.WindowsDeviceDetector>());
         services.AddSingleton<IDeviceProtectionProvider, Platform.Windows.WindowsProtectionProvider>();

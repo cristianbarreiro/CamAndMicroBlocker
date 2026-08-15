@@ -25,8 +25,8 @@ public class ProtectionServiceTests
 
         _capabilityMock.Setup(c => c.Capabilities).Returns(new PlatformCapabilities
         {
-            CameraProtectionLevel = CapabilityLevel.Hardware,
-            MicrophoneProtectionLevel = CapabilityLevel.Hardware
+            CameraProtectionLevel = CapabilityLevel.DualLayer,
+            MicrophoneProtectionLevel = CapabilityLevel.DualLayer
         });
         _capabilityMock.Setup(c => c.PlatformInfo).Returns(new PlatformInfo
         {
@@ -34,7 +34,7 @@ public class ProtectionServiceTests
             OsVersion = "1.0",
             Architecture = "X64",
             Is64Bit = true,
-            IsElevated = true
+            IsElevated = false
         });
 
         _detectorMock.Setup(d => d.DetectCamerasAsync(It.IsAny<CancellationToken>()))
@@ -44,8 +44,22 @@ public class ProtectionServiceTests
         _detectorMock.Setup(d => d.DetectAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<DeviceInfo>());
 
-        _protectionMock.Setup(p => p.GetCurrentStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BlockState());
+        _protectionMock.Setup(p => p.GetProtectionStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FullProtectionState
+            {
+                Camera = new TargetProtectionStatus
+                {
+                    Target = BlockTarget.Camera,
+                    StandardState = StandardProtectionState.Inactive,
+                    SecureState = SecureProtectionState.Unavailable
+                },
+                Microphone = new TargetProtectionStatus
+                {
+                    Target = BlockTarget.Microphone,
+                    StandardState = StandardProtectionState.Inactive,
+                    SecureState = SecureProtectionState.Unavailable
+                }
+            });
 
         _storeMock.Setup(s => s.Load()).Returns(new DesiredState());
 
@@ -57,80 +71,117 @@ public class ProtectionServiceTests
     }
 
     [Fact]
-    public async Task BlockAsync_Both_DelegatesToProviderAndSavesState()
+    public async Task EnableStandardProtection_TransitionsSecureToAvailableAndSaves()
     {
-        _protectionMock.Setup(p => p.BlockAsync(BlockTarget.Both, It.IsAny<CancellationToken>()))
+        _protectionMock.Setup(p => p.EnableStandardProtectionAsync(BlockTarget.Camera, It.IsAny<CancellationToken>()))
             .ReturnsAsync(OperationResult.Ok());
 
-        var result = await _service.BlockAsync(BlockTarget.Both);
+        var result = await _service.EnableStandardProtectionAsync(BlockTarget.Camera);
 
         Assert.True(result.Success);
-        _protectionMock.Verify(p => p.BlockAsync(BlockTarget.Both, It.IsAny<CancellationToken>()), Times.Once);
+        _protectionMock.Verify(p => p.EnableStandardProtectionAsync(BlockTarget.Camera, It.IsAny<CancellationToken>()), Times.Once);
         _storeMock.Verify(s => s.Save(It.Is<DesiredState>(
-            ds => ds.Camera == BlockStatus.Blocked && ds.Microphone == BlockStatus.Blocked)), Times.Once);
+            ds => ds.CameraStandard == StandardProtectionState.Active && ds.CameraSecure == SecureProtectionState.Available)), Times.Once);
     }
 
     [Fact]
-    public async Task BlockAsync_ProviderFails_DoesNotSaveState()
+    public async Task EnableSecureProtection_FailsIfStandardProtectionIsNotActive()
     {
-        _protectionMock.Setup(p => p.BlockAsync(BlockTarget.Both, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(OperationResult.Fail("Hardware access error"));
-
-        var result = await _service.BlockAsync(BlockTarget.Both);
-
-        Assert.False(result.Success);
-        Assert.Equal("Hardware access error", result.ErrorMessage);
-        _storeMock.Verify(s => s.Save(It.IsAny<DesiredState>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task UnblockAsync_Camera_UpdatesOnlyCameraState()
-    {
-        _protectionMock.Setup(p => p.UnblockAsync(BlockTarget.Camera, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(OperationResult.Ok());
-        _storeMock.Setup(s => s.Load()).Returns(new DesiredState
-        {
-            Camera = BlockStatus.Blocked,
-            Microphone = BlockStatus.Blocked
-        });
-
-        var result = await _service.UnblockAsync(BlockTarget.Camera);
-
-        Assert.True(result.Success);
-        _storeMock.Verify(s => s.Save(It.Is<DesiredState>(
-            ds => ds.Camera == BlockStatus.Allowed && ds.Microphone == BlockStatus.Blocked)), Times.Once);
-    }
-
-    [Fact]
-    public async Task ToggleAsync_WhenCurrentlyAllowed_Blocks()
-    {
-        _protectionMock.Setup(p => p.GetCurrentStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new BlockState
+        // Arrange: Standard is Inactive
+        _protectionMock.Setup(p => p.GetProtectionStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FullProtectionState
             {
-                Camera = new DeviceBlockState { PolicyStatus = BlockStatus.Allowed, DeviceStatus = BlockStatus.Allowed },
-                Microphone = new DeviceBlockState { PolicyStatus = BlockStatus.Allowed, DeviceStatus = BlockStatus.Allowed }
+                Camera = new TargetProtectionStatus
+                {
+                    Target = BlockTarget.Camera,
+                    StandardState = StandardProtectionState.Inactive,
+                    SecureState = SecureProtectionState.Unavailable
+                },
+                Microphone = new TargetProtectionStatus
+                {
+                    Target = BlockTarget.Microphone,
+                    StandardState = StandardProtectionState.Inactive,
+                    SecureState = SecureProtectionState.Unavailable
+                }
             });
 
-        _protectionMock.Setup(p => p.BlockAsync(BlockTarget.Both, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(OperationResult.Ok());
+        // Act
+        var result = await _service.EnableSecureProtectionAsync(BlockTarget.Camera);
 
-        var result = await _service.ToggleAsync(BlockTarget.Both);
-
-        Assert.True(result.Success);
-        _protectionMock.Verify(p => p.BlockAsync(BlockTarget.Both, It.IsAny<CancellationToken>()), Times.Once);
+        // Assert: rejected by business rules, no provider call
+        Assert.False(result.Success);
+        Assert.Contains("must enable Standard Protection", result.ErrorMessage);
+        _protectionMock.Verify(p => p.EnableSecureProtectionAsync(It.IsAny<BlockTarget>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
-    public async Task StateChanged_FiresAfterBlock()
+    public async Task EnableSecureProtection_SucceedsWhenStandardIsActive()
     {
-        var eventFired = false;
-        _service.StateChanged += _ => eventFired = true;
+        // Arrange: Standard is Active
+        _protectionMock.Setup(p => p.GetProtectionStateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new FullProtectionState
+            {
+                Camera = new TargetProtectionStatus
+                {
+                    Target = BlockTarget.Camera,
+                    StandardState = StandardProtectionState.Active,
+                    SecureState = SecureProtectionState.Available
+                },
+                Microphone = new TargetProtectionStatus
+                {
+                    Target = BlockTarget.Microphone,
+                    StandardState = StandardProtectionState.Inactive,
+                    SecureState = SecureProtectionState.Unavailable
+                }
+            });
 
-        _protectionMock.Setup(p => p.BlockAsync(BlockTarget.Both, It.IsAny<CancellationToken>()))
+        _protectionMock.Setup(p => p.EnableSecureProtectionAsync(BlockTarget.Camera, It.IsAny<CancellationToken>()))
             .ReturnsAsync(OperationResult.Ok());
 
-        await _service.BlockAsync(BlockTarget.Both);
+        // Act
+        var result = await _service.EnableSecureProtectionAsync(BlockTarget.Camera);
 
-        Assert.True(eventFired);
+        // Assert
+        Assert.True(result.Success);
+        _protectionMock.Verify(p => p.EnableSecureProtectionAsync(BlockTarget.Camera, It.IsAny<CancellationToken>()), Times.Once);
+        _storeMock.Verify(s => s.Save(It.Is<DesiredState>(ds => ds.CameraSecure == SecureProtectionState.Active)), Times.Once);
+    }
+
+    [Fact]
+    public async Task DisableSecureProtection_KeepsStandardActiveAndSetsSecureToAvailable()
+    {
+        _protectionMock.Setup(p => p.DisableSecureProtectionAsync(BlockTarget.Camera, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(OperationResult.Ok());
+
+        _storeMock.Setup(s => s.Load()).Returns(new DesiredState
+        {
+            CameraStandard = StandardProtectionState.Active,
+            CameraSecure = SecureProtectionState.Active
+        });
+
+        var result = await _service.DisableSecureProtectionAsync(BlockTarget.Camera);
+
+        Assert.True(result.Success);
+        _storeMock.Verify(s => s.Save(It.Is<DesiredState>(
+            ds => ds.CameraStandard == StandardProtectionState.Active && ds.CameraSecure == SecureProtectionState.Available)), Times.Once);
+    }
+
+    [Fact]
+    public async Task DisableStandardProtection_TransitionsSecureToUnavailable()
+    {
+        _protectionMock.Setup(p => p.DisableStandardProtectionAsync(BlockTarget.Camera, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(OperationResult.Ok());
+
+        _storeMock.Setup(s => s.Load()).Returns(new DesiredState
+        {
+            CameraStandard = StandardProtectionState.Active,
+            CameraSecure = SecureProtectionState.Available
+        });
+
+        var result = await _service.DisableStandardProtectionAsync(BlockTarget.Camera);
+
+        Assert.True(result.Success);
+        _storeMock.Verify(s => s.Save(It.Is<DesiredState>(
+            ds => ds.CameraStandard == StandardProtectionState.Inactive && ds.CameraSecure == SecureProtectionState.Unavailable)), Times.Once);
     }
 }

@@ -36,7 +36,7 @@ public sealed class SettingsService
         if (result.Success)
         {
             var state = _stateStore.Load();
-            state.StartWithSystem = enable;
+            state.Autostart = enable;
             _stateStore.Save(state);
         }
 
