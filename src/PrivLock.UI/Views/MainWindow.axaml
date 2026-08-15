@@ -1,0 +1,150 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:PrivLock.UI.ViewModels"
+        x:Class="PrivLock.UI.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="PrivLock"
+        Width="440" Height="680"
+        MinWidth="400" MinHeight="600"
+        WindowStartupLocation="CenterScreen"
+        Background="#181818"
+        Foreground="#EDEDED"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaChromeHints="NoChrome"
+        ExtendClientAreaTitleBarHeightHint="38">
+
+    <Grid RowDefinitions="38,*,Auto">
+        <!-- 1. Custom Integrated TitleBar -->
+        <Border Grid.Row="0" Background="#1A1A1D" IsHitTestVisible="True" PointerPressed="OnTitleBarPointerPressed">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                <!-- Logo & Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                    <TextBlock Text="🛡️" FontSize="14" VerticalAlignment="Center" Margin="0,0,8,0" />
+                    <TextBlock Text="{Binding AppTitle}" FontWeight="Bold" FontSize="13" Foreground="White" VerticalAlignment="Center" />
+                </StackPanel>
+
+                <!-- Window Control Buttons -->
+                <Button Grid.Column="2" Width="44" Height="38" Background="Transparent" BorderThickness="0"
+                        Click="OnMinimizeClick" VerticalContentAlignment="Center" HorizontalContentAlignment="Center">
+                    <TextBlock Text="—" FontSize="11" Foreground="#AAAAAA" />
+                </Button>
+                <Button Grid.Column="3" Width="44" Height="38" Background="Transparent" BorderThickness="0"
+                        Click="OnCloseClick" VerticalContentAlignment="Center" HorizontalContentAlignment="Center">
+                    <TextBlock Text="✕" FontSize="12" Foreground="#AAAAAA" />
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- 2. Main Scrollable Content -->
+        <ScrollViewer Grid.Row="1" Margin="16,12,16,12">
+            <StackPanel Spacing="4">
+
+                <!-- Error Toast Banner -->
+                <Border Background="#C62828" CornerRadius="8" Padding="12,8" Margin="0,0,0,12"
+                        IsVisible="{Binding HasError}">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{Binding ErrorMessage}" Foreground="White" FontSize="12" TextWrapping="Wrap" />
+                        <Button Grid.Column="1" Command="{Binding ClearErrorCommand}" Background="Transparent" BorderThickness="0" Padding="4">
+                            <TextBlock Text="✕" Foreground="White" FontSize="11" />
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- Platform Diagnostics & Badge Banner -->
+                <Border Background="#1F1F22" CornerRadius="8" Padding="12,8" Margin="0,0,0,12" BorderThickness="1" BorderBrush="#2C2C30">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2">
+                            <TextBlock Text="{Binding PlatformName}" FontSize="11" Foreground="#888888" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding CapabilitiesSummary}" FontSize="11" Foreground="#007ACC" />
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="#007ACC" CornerRadius="12" Padding="8,3" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding SecurityBadgeText}" FontSize="10" FontWeight="Bold" Foreground="White" />
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Master Toggle Card -->
+                <Border Classes="card" Background="#28282D" BorderThickness="1" BorderBrush="#35353A">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <TextBlock Grid.Column="0" Text="🔒" FontSize="26" VerticalAlignment="Center" Margin="0,0,14,0" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding MasterToggleLabel}" FontSize="14" FontWeight="Bold" Foreground="White" />
+                            <TextBlock Text="{Binding MasterStatusText}" FontSize="12" Foreground="#81C784" Margin="0,2,0,0" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="2" IsChecked="{Binding IsMasterBlocked}"
+                                      Command="{Binding ToggleMasterCommand}" VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+
+                <!-- Camera Card -->
+                <Border Classes="card">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <TextBlock Grid.Column="0" Text="📷" FontSize="22" VerticalAlignment="Center" Margin="0,0,14,0" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding CameraTitle}" FontSize="14" FontWeight="SemiBold" Foreground="White" />
+                            <TextBlock Text="{Binding CameraSubtitle}" FontSize="11" Foreground="#888888" />
+                            <TextBlock Text="{Binding CameraStatusText}" FontSize="12" Foreground="{Binding CameraStatusColor}" Margin="0,4,0,0" FontWeight="Medium" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="2" IsChecked="{Binding IsCameraBlocked}"
+                                      Command="{Binding ToggleCameraCommand}" VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+
+                <!-- Microphone Card -->
+                <Border Classes="card">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <TextBlock Grid.Column="0" Text="🎙️" FontSize="22" VerticalAlignment="Center" Margin="0,0,14,0" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding MicrophoneTitle}" FontSize="14" FontWeight="SemiBold" Foreground="White" />
+                            <TextBlock Text="{Binding MicrophoneSubtitle}" FontSize="11" Foreground="#888888" />
+                            <TextBlock Text="{Binding MicrophoneStatusText}" FontSize="12" Foreground="{Binding MicrophoneStatusColor}" Margin="0,4,0,0" FontWeight="Medium" />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="2" IsChecked="{Binding IsMicrophoneBlocked}"
+                                      Command="{Binding ToggleMicrophoneCommand}" VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+
+                <!-- Detected Devices List Section -->
+                <TextBlock Text="{Binding DetectedDevicesLabel}" FontSize="12" FontWeight="SemiBold" Foreground="#888888" Margin="4,8,0,6" />
+                <Border Background="#1C1C1E" CornerRadius="8" Padding="8" BorderThickness="1" BorderBrush="#2A2A2E">
+                    <ItemsControl ItemsSource="{Binding Devices}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:DeviceItemViewModel">
+                                <Border Padding="8,6" Margin="0,2" Background="#242427" CornerRadius="6">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding DisplayName}" FontSize="12" FontWeight="SemiBold" Foreground="White" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Text="{Binding Id}" FontSize="10" Foreground="#777777" TextTrimming="CharacterEllipsis" Margin="0,1,0,0" />
+                                        </StackPanel>
+                                        <Border Grid.Column="1" Background="{Binding StatusColor}" CornerRadius="4" Padding="6,2" VerticalAlignment="Center" Margin="6,0,0,0">
+                                            <TextBlock Text="{Binding StatusText}" FontSize="10" FontWeight="Bold" Foreground="Black" />
+                                        </Border>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- 3. Footer: Settings & Language Selector -->
+        <Border Grid.Row="2" Background="#141416" Padding="16,10" BorderThickness="0,1,0,0" BorderBrush="#252528">
+            <Grid ColumnDefinitions="*,Auto">
+                <!-- Autostart Checkbox -->
+                <CheckBox Grid.Column="0" IsChecked="{Binding IsAutostartEnabled}"
+                          Content="{Binding StartWithSystemLabel}" FontSize="12" Foreground="#CCCCCC"
+                          Command="{Binding ToggleAutostartCommand}" CommandParameter="{Binding $self.IsChecked}" />
+
+                <!-- Language Selector (ES / EN) -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                    <Button Classes="pill" Classes.active="{Binding IsSpanishSelected}"
+                            Command="{Binding SelectLanguageCommand}" CommandParameter="es" Content="ES" />
+                    <Button Classes="pill" Classes.active="{Binding IsEnglishSelected}"
+                            Command="{Binding SelectLanguageCommand}" CommandParameter="en" Content="EN" />
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

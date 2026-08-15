@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>PrivLock.Desktop</RootNamespace>
+    <AssemblyName>PrivLock</AssemblyName>
+    <ApplicationManifest Condition="$([MSBuild]::IsOSPlatform('Windows'))">app.manifest</ApplicationManifest>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia.Desktop" Version="11.2.3" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Serilog" Version="3.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PrivLock.Domain\PrivLock.Domain.csproj" />
+    <ProjectReference Include="..\PrivLock.Platform.Abstractions\PrivLock.Platform.Abstractions.csproj" />
+    <ProjectReference Include="..\PrivLock.Infrastructure.Common\PrivLock.Infrastructure.Common.csproj" />
+    <ProjectReference Include="..\PrivLock.Application\PrivLock.Application.csproj" />
+    <ProjectReference Include="..\PrivLock.UI\PrivLock.UI.csproj" />
+    <ProjectReference Include="..\PrivLock.Platform.Windows\PrivLock.Platform.Windows.csproj" />
+    <ProjectReference Include="..\PrivLock.Platform.Linux\PrivLock.Platform.Linux.csproj" />
+    <ProjectReference Include="..\PrivLock.Platform.MacOS\PrivLock.Platform.MacOS.csproj" />
+  </ItemGroup>
+
+</Project>

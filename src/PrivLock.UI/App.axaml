@@ -1,0 +1,39 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="PrivLock.UI.App"
+             RequestedThemeVariant="Dark">
+    <Application.Styles>
+        <FluentTheme />
+
+        <!-- Card / Panel Styling -->
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#252528" />
+            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+        </Style>
+
+        <!-- Accent ToggleSwitch Styling -->
+        <Style Selector="ToggleSwitch">
+            <Setter Property="OnContent" Value="" />
+            <Setter Property="OffContent" Value="" />
+        </Style>
+
+        <!-- Segmented Pill Button Styling -->
+        <Style Selector="Button.pill">
+            <Setter Property="Background" Value="#2C2C30" />
+            <Setter Property="Foreground" Value="#CCCCCC" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="12,6" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="#38383C" />
+        </Style>
+        <Style Selector="Button.pill.active">
+            <Setter Property="Background" Value="#007ACC" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="BorderBrush" Value="#0098FF" />
+        </Style>
+    </Application.Styles>
+</Application>
