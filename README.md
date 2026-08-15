@@ -6,12 +6,14 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Platform Support" />
   <img src="https://img.shields.io/badge/Framework-.NET%2010.0%20%7C%20Avalonia%20UI-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 10 & Avalonia UI" />
-  <img src="https://img.shields.io/badge/Security-Multi--Layer%20Protection-4CAF50?style=for-the-badge&logo=security&logoColor=white" alt="Security" />
+  <img src="https://img.shields.io/badge/Security-Least%20Privilege%20%7C%20On--Demand%20Elevation-4CAF50?style=for-the-badge&logo=security&logoColor=white" alt="Security" />
   <img src="https://img.shields.io/badge/License-GNU%20GPLv3-0078D4?style=for-the-badge&logo=gnu" alt="GPLv3 License" />
   <img src="https://img.shields.io/badge/Language-Español%20%7C%20English-007ACC?style=for-the-badge" alt="i18n Support" />
 </p>
 
 **PrivLock** is a native, high-performance security utility for **Windows**, **Linux**, and **macOS** (built with C# / .NET 10 and Avalonia UI), designed to **reliably, quickly, and 100% reversibly block and unblock access to your camera and microphone**.
+
+PrivLock adheres to the **Principle of Least Privilege**: it runs as **one single application** with standard user permissions by default, elevating privileges **only on-demand** when an administrative action is specifically executed.
 
 ---
 
@@ -34,17 +36,19 @@
 - 🛡️ **Native Multi-Layer Protection by Platform**:
   - **Windows (Dual-Layer)**:
     1. *System Policy Layer*: Enforces group policies in `HKLM\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy` for Store and Desktop apps.
-    2. *Hardware Controller Layer*: Calls Win32 `CfgMgr32.dll` (`CM_Disable_DevNode` / `CM_Enable_DevNode`) directly in-process to disable PnP device nodes.
+    2. *Hardware Controller Layer*: Calls Win32 `CfgMgr32.dll` (`CM_Disable_DevNode` / `CM_Enable_DevNode`) directly to disable PnP device nodes.
   - **Linux (V4L2 + PipeWire / PulseAudio)**:
     1. *Camera*: Device node permission revocation (`/dev/video*`) and USB driver unbinding via `sysfs`/`udev`.
-    2. *Microphone*: Direct source mute and lock via WirePlumber/PipeWire (`wpctl`) and PulseAudio (`pactl`).
+    2. *Microphone*: Direct source mute and lock via WirePlumber/PipeWire (`wpctl`) and PulseAudio (`pactl`) — *requires no root elevation*.
   - **macOS (CoreAudio HAL)**:
     1. *Microphone*: Direct hardware input mute and master volume clamp via CoreAudio HAL (`AudioObjectSetPropertyData`).
     2. *Camera*: TCC permission inspection and active stream verification.
+- ⚡ **Single Application & Dynamic On-Demand Elevation**:
+  - Starts as a standard user process (`asInvoker`).
+  - When a privileged operation is requested, PrivLock triggers the OS authorization (Windows UAC, Linux Polkit, macOS Authorization) **strictly on-demand**.
+  - No separate `PrivLock.Elevated.exe` binary — everything is self-contained.
 - 🎯 **Transparent Capabilities Model**:
   - PrivLock explicitly reports what each operating system supports without false security claims.
-- ⚡ **Zero UAC / Elevation Fatigue**:
-  - Single elevation prompt on startup where required. All subsequent toggles (hotkey, tray, or UI) execute **instantly (0 ms IPC latency)**.
 - 🎨 **Modern Fluent Dark UI Design**:
   - Avalonia UI 11 with integrated custom title bar (38px), rounded card containers, and responsive layout.
 - 🌐 **Dynamic Multilingual Support (ES / EN)**:
@@ -67,16 +71,16 @@ PrivLock/
 │   ├── PrivLock.Platform.Abstractions/   # Platform contracts (IDeviceProtectionProvider, IDeviceDetector, etc.)
 │   ├── PrivLock.Infrastructure.Common/   # Cross-platform JSON state store, Serilog logging, CrashReporter
 │   ├── PrivLock.Application/             # Orchestration services (ProtectionService, Settings, Localization)
-│   ├── PrivLock.Platform.Windows/        # Windows CfgMgr32 PnP, WMI GUIDs, HKLM Registry policies
+│   ├── PrivLock.Platform.Windows/        # Windows CfgMgr32 PnP, WMI GUIDs, HKLM Registry policies, on-demand UAC
 │   ├── PrivLock.Platform.Linux/          # Linux V4L2 device nodes, PipeWire/PulseAudio source control
 │   ├── PrivLock.Platform.MacOS/          # macOS CoreAudio HAL input mute, AVFoundation, LaunchAgents
 │   ├── PrivLock.UI/                      # Multiplatform Avalonia UI 11 Views & ViewModels
-│   └── PrivLock.Desktop/                 # Executable Host & Platform Dependency Injection
+│   └── PrivLock.Desktop/                 # Single Executable Host & Platform Dependency Injection
 │
 ├── tests/
 │   ├── PrivLock.Domain.Tests/            # Domain unit tests
 │   ├── PrivLock.Infrastructure.Tests/    # Storage, crash reporting & localization tests
-│   ├── PrivLock.Application.Tests/       # Orchestration & business logic tests
+│   ├── PrivLock.Application.Tests/       # Orchestration, on-demand elevation & business logic tests
 │   └── CamMicBlocker.Tests/              # Compatibility test suite
 │
 └── .github/workflows/
@@ -97,7 +101,7 @@ cd PrivLock
 dotnet build CamMicBlocker.sln
 ```
 
-### 2. Run Test Suite (59 Tests)
+### 2. Run Test Suite (61 Tests)
 ```powershell
 dotnet test CamMicBlocker.sln
 ```
@@ -124,6 +128,7 @@ dotnet publish src/PrivLock.Desktop/PrivLock.Desktop.csproj -c Release -r osx-ar
 
 ## 🛡️ Security & Observability
 
+- **Least Privilege Architecture**: Runs standard user permissions by default (`asInvoker`), elevating privileges transiently (~50ms) only during privileged operations.
 - **Structured Diagnostic Logs**:
   - Windows: `%LOCALAPPDATA%\PrivLock\Logs\PrivLock-yyyyMMdd.log`
   - Linux: `~/.local/share/PrivLock/Logs/PrivLock-yyyyMMdd.log`

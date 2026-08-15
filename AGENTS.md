@@ -7,6 +7,10 @@ This document provides operational context, safety rules, architectural conventi
 ## 1. Multiplatform Safety, Hardware Integrity & Security Policy
 
 ### A. Core Security Principles
+- **Single-Binary & Least Privilege (On-Demand Elevation)**:
+  - PrivLock runs as **one single application (`PrivLock.exe` / `PrivLock`)** starting with standard unprivileged user rights (`asInvoker`).
+  - There is **NO second elevated application** (`PrivLock.Elevated.exe` is strictly prohibited).
+  - Privileged actions (e.g., PnP node state, HKLM Registry Group Policies) request OS authorization/elevation **strictly on-demand** at the moment the user triggers that specific action.
 - **Official Native APIs First**: Always use officially supported platform APIs:
   - **Windows**: `CfgMgr32.dll` PnP node management, `HKLM\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy` Group Policies, WMI `Win32_PnPEntity`.
   - **Linux**: V4L2 device node control (`/dev/video*`), `sysfs`/`udev` driver unbind, PipeWire (`wpctl`) and PulseAudio (`pactl`) audio source management, Polkit (`pkexec`).
@@ -38,16 +42,39 @@ Before committing changes to hardware controllers, policy managers, sound server
 3. **Clean Reversibility**: Can the system state be 100% restored if an error occurs mid-operation?
 4. **Reboot Resilience**: Will the device or policy state remain consistent after a system restart?
 5. **Hardware Disconnection**: How does the code handle a camera or microphone being physically unplugged/replugged mid-operation (*hotplug*)?
-6. **Elevation / Permission Denial**: What happens if the user denies elevation (UAC prompt, Polkit dialog, sudo)?
+6. **Elevation / Permission Denial**: What happens if the user denies elevation (UAC prompt, Polkit dialog, sudo)? The system must return a clean user-facing error and avoid corrupted state.
 7. **Privilege Loss / Restricted Environment**: Does the application degrade gracefully if running in a sandboxed or non-root environment?
 8. **Driver Problem States**: How does the system handle pre-existing problem states (e.g., `CM_PROB_DISABLED` 0x16 on Windows, unmounted sound card on Linux)?
 9. **Post-Mortem Observability**: Is sufficient non-sensitive diagnostic data logged to diagnose field failures via structured JSON crash dumps?
 
 ---
 
-## 3. Architecture & Privilege Model
+## 3. Dynamic On-Demand Elevation Architecture (6-Point Assessment)
 
-### A. Layered Clean Architecture (Domain-Driven Design + Strategy Pattern)
+### A. Architectural Rationale & Threat Model
+1. **Why On-Demand Elevation is Used**:
+   Windows NT and Linux kernel security models require administrative permissions to modify machine-wide registry keys (`HKLM`) and toggle PnP device states (`CfgMgr32.dll!CM_Disable_DevNode`).
+2. **What Privileged Operations Are Performed**:
+   - Setting/removing `HKLM\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy` keys (`LetAppsAccessCamera`, `LetAppsAccessMicrophone`).
+   - Disabling/enabling PnP device nodes in `CfgMgr32.dll` via device instance IDs.
+   - Modifying `/dev/video*` permissions on Linux when requested.
+3. **Why Single-Binary Self-Invocation is Superior**:
+   Instead of a permanent elevated daemon or a separate binary (`PrivLock.Elevated.exe`), `PrivLock` invokes its own executable (`Environment.ProcessPath`) with an internal flag `--privileged-exec <command> <arg>` using Windows UAC `Verb="runas"` or Linux `pkexec`.
+4. **Communication & IPC**:
+   - Short-lived transient execution (~50ms lifetime).
+   - Parameters passed via strictly validated CLI arguments.
+   - Result communicated back via a structured JSON temp file (`PrivLock_res_*.json`), deserialized, and deleted immediately.
+5. **Minimizing Attack Surface**:
+   - The main application runs with unprivileged `asInvoker` token.
+   - The `--privileged-exec` dispatcher implements a closed whitelist (`set-policy`, `remove-policy`, `disable-devices`, `enable-devices`).
+   - Strict parameter validation prevents command injection.
+6. **Zero Unnecessary Privilege Retention**:
+   The elevated transient process exits immediately upon completing the API call. The user-facing application never retains administrative privileges.
+
+---
+
+## 4. Architecture & Layered Project Structure
+
 ```text
 src/
 ├── PrivLock.Domain/                  # Pure C# domain: Models, Enums, Capabilities, Results
@@ -76,7 +103,8 @@ src/
 ├── PrivLock.Platform.Windows/        # Windows native implementations
 │   ├── Devices/                      # CfgMgr32 P/Invoke & WindowsDeviceDetector (WMI/GUIDs)
 │   ├── Policies/                     # HKLM AppPrivacy Registry Policies
-│   ├── Elevation/                    # WindowsElevationProvider (UAC / Token)
+│   ├── Elevation/                    # WindowsElevationProvider & On-Demand UAC
+│   ├── Privileged/                   # WindowsPrivilegedExecutor (Self-invocation & whitelist)
 │   └── System/                       # WindowsAutostartProvider, WindowsHotkeyProvider, WindowsSingleInstanceGuard
 │
 ├── PrivLock.Platform.Linux/          # Linux native implementations
@@ -94,38 +122,10 @@ src/
 │   ├── ViewModels/                   # MainViewModel, DeviceItemViewModel
 │   └── App.axaml                     # Fluent Dark theme & styles
 │
-└── PrivLock.Desktop/                 # Executable Host
-    ├── Program.cs                    # Platform DI composition root & lifecycle
-    └── app.manifest                  # Windows single-elevation manifest
+└── PrivLock.Desktop/                 # Single Executable Host
+    ├── Program.cs                    # Platform DI composition root & --privileged-exec dispatcher
+    └── app.manifest                  # requestedExecutionLevel = asInvoker
 ```
-
-### B. Declarative Capabilities Matrix
-PrivLock never makes false security promises. Each platform explicitly reports its capability level:
-- **Windows**: `CameraProtectionLevel = DualLayer`, `MicrophoneProtectionLevel = DualLayer` (`CfgMgr32` hardware PnP + HKLM Registry Policy).
-- **Linux**: `CameraProtectionLevel = Hardware` (V4L2 driver unbind / ACLs), `MicrophoneProtectionLevel = Software` (PipeWire/PulseAudio server source mute & lock).
-- **macOS**: `CameraProtectionLevel = Software` (AVFoundation state), `MicrophoneProtectionLevel = Hardware` (CoreAudio HAL hardware input mute).
-
----
-
-## 4. Technical Conventions & Restrictions
-
-### A. Device Detection Strategy
-- **Windows**: Class GUID filtering only (Camera: `{ca3e7ab9-b4c3-4ae6-8251-579ef933890f}`, AudioEndpoint: `{c166523c-fe0c-4a94-a586-f1a80cfbbf3e}` with `{0.0.1.` capture pattern).
-- **Linux**: V4L2 nodes in `/sys/class/video4linux/` and ALSA `/proc/asound/pcm` capture endpoints.
-- **macOS**: CoreAudio HAL input streams and AVFoundation devices.
-
-### B. Observability & Crash Diagnostics
-- **Serilog Structured Logs**:
-  - Windows: `%LOCALAPPDATA%\PrivLock\Logs\PrivLock-yyyyMMdd.log`
-  - Linux: `~/.local/share/PrivLock/Logs/PrivLock-yyyyMMdd.log`
-  - macOS: `~/Library/Application Support/PrivLock/Logs/PrivLock-yyyyMMdd.log`
-- **Structured Crash Reports**: JSON dumps written to `.../PrivLock/CrashReports/crash-yyyyMMdd-HHmmss-fff.json`.
-- **Correlation**: All operations push an `OperationId` (`Op-xxxxxxxx`) to Serilog `LogContext` and measure execution time with `System.Diagnostics.Stopwatch`.
-
-### C. UI/UX Standards (Avalonia 11)
-- **Fluent Dark Theme**: `#181818` background, `#252528` card panels, `#007ACC` primary accent.
-- **Custom Integrated Title Bar**: `ExtendClientAreaToDecorationsHint="True"`, 38px `#1A1A1D` header with custom drag, minimize (`—`), and close (`✕`).
-- **Dynamic Localization (i18n)**: All UI elements bind to `MainViewModel` localized properties backed by `LocalizationCatalog` / `LocalizationService` (`"es"` / `"en"`).
 
 ---
 
@@ -136,12 +136,12 @@ PrivLock never makes false security promises. Each platform explicitly reports i
 dotnet build CamMicBlocker.sln
 ```
 
-### Run Full Test Suite (59 Tests)
+### Run Full Test Suite (61 Tests)
 ```powershell
 dotnet test CamMicBlocker.sln
 ```
 
-### Run Multiplatform Desktop App (Debug)
+### Run Application (Debug)
 ```powershell
 dotnet run --project src/PrivLock.Desktop/PrivLock.Desktop.csproj
 ```

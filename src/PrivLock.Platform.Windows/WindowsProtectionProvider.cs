@@ -3,14 +3,17 @@ using PrivLock.Domain.Models;
 using PrivLock.Domain.Results;
 using PrivLock.Platform.Abstractions;
 using PrivLock.Platform.Windows.Devices;
+using PrivLock.Platform.Windows.Elevation;
 using PrivLock.Platform.Windows.Policies;
+using PrivLock.Platform.Windows.Privileged;
 using Serilog;
 
 namespace PrivLock.Platform.Windows;
 
 /// <summary>
 /// Native Windows implementation of IDeviceProtectionProvider.
-/// Provides dual-layer protection (HKLM Registry Privacy Policies + CfgMgr32 PnP Hardware disablement).
+/// Supports both in-process execution (if already elevated) and seamless on-demand elevation
+/// within the single PrivLock application.
 /// </summary>
 public sealed class WindowsProtectionProvider : IDeviceProtectionProvider
 {
@@ -19,74 +22,138 @@ public sealed class WindowsProtectionProvider : IDeviceProtectionProvider
     private readonly WindowsDeviceDetector _deviceDetector;
     private readonly WindowsDeviceController _deviceController;
     private readonly WindowsPolicyManager _policyManager;
+    private readonly IElevationProvider _elevationProvider;
     private readonly IStateStore _stateStore;
 
     public WindowsProtectionProvider(
         WindowsDeviceDetector deviceDetector,
         WindowsDeviceController deviceController,
         WindowsPolicyManager policyManager,
+        IElevationProvider elevationProvider,
         IStateStore stateStore)
     {
         _deviceDetector = deviceDetector;
         _deviceController = deviceController;
         _policyManager = policyManager;
+        _elevationProvider = elevationProvider;
         _stateStore = stateStore;
     }
 
     public async Task<OperationResult> BlockAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
         var sw = Stopwatch.StartNew();
-        Log.Information("Applying Windows dual-layer block: Target={Target}", target);
+        Log.Information("Applying Windows protection: Target={Target}, IsElevated={IsElevated}",
+            target, _elevationProvider.IsElevated);
 
-        // 1. Apply HKLM Registry Policy
-        var policyResult = _policyManager.SetPolicy(target, BlockStatus.Blocked);
-        if (!policyResult.Success)
+        var targetStr = target.ToString().ToLowerInvariant();
+
+        // 1. If running as standard user, use on-demand elevation via self-contained executor
+        if (!_elevationProvider.IsElevated)
+        {
+            Log.Information("Process is running as standard user. Requesting on-demand elevation...");
+
+            // Set policy via on-demand elevation
+            var policyResult = await WindowsPrivilegedExecutor.InvokeOnDemandElevationAsync("set-policy", targetStr);
+            if (!policyResult.Success)
+            {
+                sw.Stop();
+                Log.Error("On-demand policy elevation failed: {Error}", policyResult.ErrorMessage);
+                return policyResult;
+            }
+
+            // Disable physical devices via on-demand elevation
+            var devices = await GetDevicesForTargetAsync(target, cancellationToken);
+            if (devices.Count > 0)
+            {
+                var ids = string.Join("|", devices.Select(d => d.Id));
+                var devResult = await WindowsPrivilegedExecutor.InvokeOnDemandElevationAsync("disable-devices", ids);
+                if (!devResult.Success)
+                {
+                    Log.Warning("On-demand device disable returned warning: {Error}", devResult.ErrorMessage);
+                }
+            }
+
+            sw.Stop();
+            Log.Information("On-demand Windows block completed in {DurationMs}ms", sw.ElapsedMilliseconds);
+            return OperationResult.Ok();
+        }
+
+        // 2. If already elevated, execute directly in-process for maximum performance (0ms IPC delay)
+        var inProcessPolicyResult = _policyManager.SetPolicy(target, BlockStatus.Blocked);
+        if (!inProcessPolicyResult.Success)
         {
             sw.Stop();
-            Log.Error("Failed to set Windows registry policy: {Error}", policyResult.ErrorMessage);
-            return policyResult;
+            Log.Error("Failed to set Windows registry policy in-process: {Error}", inProcessPolicyResult.ErrorMessage);
+            return inProcessPolicyResult;
         }
 
-        // 2. Locate and disable physical hardware devices via CfgMgr32
-        var devices = await GetDevicesForTargetAsync(target, cancellationToken);
-        if (devices.Count > 0)
+        var inProcessDevices = await GetDevicesForTargetAsync(target, cancellationToken);
+        if (inProcessDevices.Count > 0)
         {
-            var deviceResult = await _deviceController.DisableDevicesAsync(devices);
+            var deviceResult = await _deviceController.DisableDevicesAsync(inProcessDevices);
             if (!deviceResult.Success)
             {
-                Log.Warning("Some physical devices could not be disabled via CfgMgr32: {Error}. System policy remains active.",
-                    deviceResult.ErrorMessage);
+                Log.Warning("Some physical devices could not be disabled via CfgMgr32: {Error}", deviceResult.ErrorMessage);
             }
-        }
-        else
-        {
-            Log.Warning("No physical {Target} devices detected, but Windows policy was enforced.", target);
         }
 
         sw.Stop();
-        Log.Information("Windows block completed in {DurationMs}ms", sw.ElapsedMilliseconds);
+        Log.Information("In-process Windows block completed in {DurationMs}ms", sw.ElapsedMilliseconds);
         return OperationResult.Ok();
     }
 
     public async Task<OperationResult> UnblockAsync(BlockTarget target, CancellationToken cancellationToken = default)
     {
         var sw = Stopwatch.StartNew();
-        Log.Information("Removing Windows dual-layer block: Target={Target}", target);
+        Log.Information("Removing Windows protection: Target={Target}, IsElevated={IsElevated}",
+            target, _elevationProvider.IsElevated);
 
-        // 1. Remove HKLM Registry Policy
-        var policyResult = _policyManager.SetPolicy(target, BlockStatus.Allowed);
-        if (!policyResult.Success)
+        var targetStr = target.ToString().ToLowerInvariant();
+
+        // 1. If running as standard user, use on-demand elevation
+        if (!_elevationProvider.IsElevated)
         {
+            Log.Information("Process is running as standard user. Requesting on-demand elevation...");
+
+            // Remove policy via on-demand elevation
+            var policyResult = await WindowsPrivilegedExecutor.InvokeOnDemandElevationAsync("remove-policy", targetStr);
+            if (!policyResult.Success)
+            {
+                sw.Stop();
+                Log.Error("On-demand policy removal elevation failed: {Error}", policyResult.ErrorMessage);
+                return policyResult;
+            }
+
+            // Enable physical devices via on-demand elevation
+            var devices = await GetDevicesForTargetAsync(target, cancellationToken);
+            if (devices.Count > 0)
+            {
+                var ids = string.Join("|", devices.Select(d => d.Id));
+                var devResult = await WindowsPrivilegedExecutor.InvokeOnDemandElevationAsync("enable-devices", ids);
+                if (!devResult.Success)
+                {
+                    Log.Warning("On-demand device enable returned warning: {Error}", devResult.ErrorMessage);
+                }
+            }
+
             sw.Stop();
-            Log.Error("Failed to remove Windows registry policy: {Error}", policyResult.ErrorMessage);
-            return policyResult;
+            Log.Information("On-demand Windows unblock completed in {DurationMs}ms", sw.ElapsedMilliseconds);
+            return OperationResult.Ok();
         }
 
-        // 2. Locate and enable physical hardware devices via CfgMgr32
-        var devices = await GetDevicesForTargetAsync(target, cancellationToken);
-        if (devices.Count > 0)
+        // 2. If already elevated, execute directly in-process
+        var inProcessPolicyResult = _policyManager.SetPolicy(target, BlockStatus.Allowed);
+        if (!inProcessPolicyResult.Success)
         {
-            var deviceResult = await _deviceController.EnableDevicesAsync(devices);
+            sw.Stop();
+            Log.Error("Failed to remove Windows registry policy in-process: {Error}", inProcessPolicyResult.ErrorMessage);
+            return inProcessPolicyResult;
+        }
+
+        var inProcessDevices = await GetDevicesForTargetAsync(target, cancellationToken);
+        if (inProcessDevices.Count > 0)
+        {
+            var deviceResult = await _deviceController.EnableDevicesAsync(inProcessDevices);
             if (!deviceResult.Success)
             {
                 Log.Warning("Some physical devices could not be enabled via CfgMgr32: {Error}", deviceResult.ErrorMessage);
@@ -94,7 +161,7 @@ public sealed class WindowsProtectionProvider : IDeviceProtectionProvider
         }
 
         sw.Stop();
-        Log.Information("Windows unblock completed in {DurationMs}ms", sw.ElapsedMilliseconds);
+        Log.Information("In-process Windows unblock completed in {DurationMs}ms", sw.ElapsedMilliseconds);
         return OperationResult.Ok();
     }
 

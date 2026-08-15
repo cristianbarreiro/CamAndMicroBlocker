@@ -3,6 +3,8 @@
 Refer to the primary project documentation in `AGENTS.md` at the workspace root for complete architectural guidelines, build instructions, 9-point risk assessment checklists, capabilities matrix, and security policies.
 
 ## Quick Architecture Summary
+- **Single Application Model**: One single binary (`PrivLock.exe` / `PrivLock`) running as standard user (`asInvoker`). No separate elevated executable.
+- **Dynamic On-Demand Elevation**: Administrative rights requested strictly at the moment a privileged operation is executed (via short-lived self-invocation `--privileged-exec`), or directly in-process if already elevated.
 - **Target**: .NET 10 / C# (Cross-Platform)
 - **UI Framework**: Avalonia UI 11+ (Fluent Dark Theme, System Tray, Custom Window Chrome)
 - **Architecture**: Clean Architecture (Domain, Platform.Abstractions, Infrastructure.Common, Application, Native Platform Adapters, Avalonia UI, Desktop Host)

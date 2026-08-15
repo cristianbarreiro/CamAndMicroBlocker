@@ -1,8 +1,10 @@
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using Avalonia;
 using Microsoft.Extensions.DependencyInjection;
 using PrivLock.Application.Services;
 using PrivLock.Domain.Models;
+using PrivLock.Domain.Results;
 using PrivLock.Infrastructure.Common.Logging;
 using PrivLock.Infrastructure.Common.Storage;
 using PrivLock.Platform.Abstractions;
@@ -17,11 +19,18 @@ public static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        // 1. Initialize logging
+        // 1. Check for internal privileged execution flag (--privileged-exec)
+        // This allows on-demand elevated execution within the SAME single executable.
+        if (args.Length >= 3 && args[0].Equals("--privileged-exec", StringComparison.OrdinalIgnoreCase))
+        {
+            return HandlePrivilegedExecution(args);
+        }
+
+        // 2. Initialize standard logging
         LoggingConfiguration.Initialize();
         Log.Information("=== PrivLock Desktop Starting ===");
 
-        // 2. Global exception handlers
+        // 3. Global exception handlers
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
         {
             if (e.ExceptionObject is Exception ex)
@@ -44,12 +53,12 @@ public static class Program
 
         try
         {
-            // 3. Build Dependency Injection Service Provider
+            // 4. Build Dependency Injection Service Provider
             var services = new ServiceCollection();
             ConfigureServices(services);
             using var serviceProvider = services.BuildServiceProvider();
 
-            // 4. Handle CLI cleanup flag (--unblock-and-exit)
+            // 5. Handle CLI cleanup flag (--unblock-and-exit)
             if (args.Any(a => a.Equals("--unblock-and-exit", StringComparison.OrdinalIgnoreCase) ||
                              a.Equals("-u", StringComparison.OrdinalIgnoreCase)))
             {
@@ -65,7 +74,7 @@ public static class Program
                 return 0;
             }
 
-            // 5. Single-instance check
+            // 6. Single-instance check
             var singleInstanceGuard = serviceProvider.GetRequiredService<ISingleInstanceGuard>();
             if (!singleInstanceGuard.TryAcquireSingleInstance())
             {
@@ -74,11 +83,11 @@ public static class Program
                 return 0;
             }
 
-            // 6. Initialize localization
+            // 7. Initialize localization
             var localizationService = serviceProvider.GetRequiredService<LocalizationService>();
             localizationService.Initialize();
 
-            // 7. Start Avalonia Application
+            // 8. Start Avalonia Application
             var mainViewModel = serviceProvider.GetRequiredService<MainViewModel>();
 
             var exitCode = BuildAvaloniaApp(mainViewModel)
@@ -96,6 +105,49 @@ public static class Program
             Log.CloseAndFlush();
             return 1;
         }
+    }
+
+    private static int HandlePrivilegedExecution(string[] args)
+    {
+        // Format: --privileged-exec <command> <argument> [--result-file <path>]
+        var command = args[1];
+        var argument = args[2];
+        string? resultFilePath = null;
+
+        for (int i = 3; i < args.Length; i++)
+        {
+            if (args[i].Equals("--result-file", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
+            {
+                resultFilePath = args[i + 1];
+                break;
+            }
+        }
+
+        OperationResult result;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            result = Platform.Windows.Privileged.WindowsPrivilegedExecutor.ExecutePrivilegedCommand(command, argument);
+        }
+        else
+        {
+            result = OperationResult.Fail($"Privileged execution not implemented for {RuntimeInformation.OSDescription}");
+        }
+
+        if (!string.IsNullOrEmpty(resultFilePath))
+        {
+            try
+            {
+                var json = JsonSerializer.Serialize(result, new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+                    WriteIndented = false
+                });
+                File.WriteAllText(resultFilePath, json);
+            }
+            catch { /* Best effort */ }
+        }
+
+        return result.Success ? 0 : 1;
     }
 
     public static AppBuilder BuildAvaloniaApp(MainViewModel viewModel) =>
