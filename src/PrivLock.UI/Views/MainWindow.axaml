@@ -17,13 +17,10 @@
         <!-- 1. Custom Integrated TitleBar -->
         <Border Grid.Row="0" Background="#1A1A1D" IsHitTestVisible="True" PointerPressed="OnTitleBarPointerPressed">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-                <!-- Logo, Title & Settings Dropdown -->
-                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0" Spacing="6">
-                    <TextBlock Text="🛡️" FontSize="14" VerticalAlignment="Center" />
-                    <TextBlock Text="{Binding AppTitle}" FontWeight="Bold" FontSize="13" Foreground="White" VerticalAlignment="Center" />
-
+                <!-- Settings Dropdown, Logo & Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,0,0" Spacing="6">
                     <!-- Settings Dropdown Button -->
-                    <Button Background="Transparent" BorderThickness="0" Padding="4,2" Margin="4,0,0,0"
+                    <Button Background="Transparent" BorderThickness="0" Padding="6,4"
                             VerticalAlignment="Center" Cursor="Hand" ToolTip.Tip="Menú y Ajustes">
                         <TextBlock Text="⚙️" FontSize="13" Foreground="#AAAAAA" />
                         <Button.Flyout>
@@ -36,6 +33,9 @@
                             </MenuFlyout>
                         </Button.Flyout>
                     </Button>
+
+                    <TextBlock Text="🛡️" FontSize="14" VerticalAlignment="Center" />
+                    <TextBlock Text="{Binding AppTitle}" FontWeight="Bold" FontSize="13" Foreground="White" VerticalAlignment="Center" />
                 </StackPanel>
 
                 <!-- Window Controls -->
