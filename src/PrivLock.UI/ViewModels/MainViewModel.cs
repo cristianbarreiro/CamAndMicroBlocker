@@ -79,6 +79,34 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isMicSecureHintVisible;
 
+    // --- Unified (Both) States ---
+    [ObservableProperty]
+    private bool _isBothStandardActive;
+
+    [ObservableProperty]
+    private string _bothStandardText = "";
+
+    [ObservableProperty]
+    private string _bothStandardColor = "#81C784";
+
+    [ObservableProperty]
+    private string _bothSecureText = "";
+
+    [ObservableProperty]
+    private string _bothSecureBadgeColor = "#555555";
+
+    [ObservableProperty]
+    private string _bothSecureButtonText = "";
+
+    [ObservableProperty]
+    private bool _isBothSecureButtonEnabled;
+
+    [ObservableProperty]
+    private string _bothSecureHint = "";
+
+    [ObservableProperty]
+    private bool _isBothSecureHintVisible;
+
     // --- Common & Settings ---
     [ObservableProperty]
     private bool _isSpanishSelected = true;
@@ -119,6 +147,10 @@ public sealed partial class MainViewModel : ObservableObject
     public string StartWithSystemLabel => _localizationService.GetString("StartWithSystem");
     public string LanguageLabel => _localizationService.GetString("Language");
     public string CapabilitiesTitle => _localizationService.GetString("CapabilitiesTitle");
+    public string UnifiedTitle => _localizationService.GetString("UnifiedTitle");
+    public string UnifiedSubtitle => _localizationService.GetString("UnifiedSubtitle");
+    public string UnifiedStandardDesc => _localizationService.GetString("UnifiedStandardDesc");
+    public string UnifiedSecureDesc => _localizationService.GetString("UnifiedSecureDesc");
 
     public MainViewModel(
         ProtectionService protectionService,
@@ -182,6 +214,10 @@ public sealed partial class MainViewModel : ObservableObject
             OnPropertyChanged(nameof(StartWithSystemLabel));
             OnPropertyChanged(nameof(LanguageLabel));
             OnPropertyChanged(nameof(CapabilitiesTitle));
+            OnPropertyChanged(nameof(UnifiedTitle));
+            OnPropertyChanged(nameof(UnifiedSubtitle));
+            OnPropertyChanged(nameof(UnifiedStandardDesc));
+            OnPropertyChanged(nameof(UnifiedSecureDesc));
             _ = RefreshStateAsync();
         });
     }
@@ -261,6 +297,47 @@ public sealed partial class MainViewModel : ObservableObject
                     MicSecureHint = _localizationService.GetString("SecureRequirementHint", "Enable Standard Protection first");
                     IsMicSecureHintVisible = !micStdActive;
                     break;
+            }
+
+            // === 3. Unified (Both) UI ===
+            var bothStdActive = camStdActive && micStdActive;
+            IsBothStandardActive = bothStdActive;
+            BothStandardText = bothStdActive
+                ? _localizationService.GetString("StatusStandardActive", "● Standard Active")
+                : _localizationService.GetString("StatusStandardInactive", "○ Standard Inactive");
+            BothStandardColor = bothStdActive ? "#E57373" : "#81C784";
+
+            var camSecure = state.Camera.SecureState;
+            var micSecure = state.Microphone.SecureState;
+            var bothSecureActive = camSecure == SecureProtectionState.Active && micSecure == SecureProtectionState.Active;
+            var bothSecureAvailable = bothStdActive &&
+                (camSecure is SecureProtectionState.Available or SecureProtectionState.Active) &&
+                (micSecure is SecureProtectionState.Available or SecureProtectionState.Active);
+
+            if (bothSecureActive)
+            {
+                BothSecureText = _localizationService.GetString("StatusSecureActive", "🛡️ Secure Active (Hardened)");
+                BothSecureBadgeColor = "#D32F2F";
+                BothSecureButtonText = _localizationService.GetString("DisableSecure", "Disable Secure");
+                IsBothSecureButtonEnabled = true;
+                IsBothSecureHintVisible = false;
+            }
+            else if (bothSecureAvailable)
+            {
+                BothSecureText = _localizationService.GetString("StatusSecureAvailable", "○ Available to enable");
+                BothSecureBadgeColor = "#F57C00";
+                BothSecureButtonText = _localizationService.GetString("EnableSecure", "🔒 Enable Secure Protection");
+                IsBothSecureButtonEnabled = true;
+                IsBothSecureHintVisible = false;
+            }
+            else
+            {
+                BothSecureText = _localizationService.GetString("StatusSecureUnavailable", "🔒 Unavailable");
+                BothSecureBadgeColor = "#555555";
+                BothSecureButtonText = _localizationService.GetString("EnableSecure", "🔒 Enable Secure Protection");
+                IsBothSecureButtonEnabled = false;
+                BothSecureHint = _localizationService.GetString("SecureRequirementHint", "Enable Standard Protection first");
+                IsBothSecureHintVisible = !bothStdActive;
             }
 
             // Overall Badge
@@ -367,6 +444,51 @@ public sealed partial class MainViewModel : ObservableObject
         if (!result.Success)
         {
             ShowError(result.ErrorMessage ?? "Microphone Secure Protection error");
+            await RefreshStateAsync();
+        }
+    }
+
+    // --- Unified (Both) Toggle ---
+
+    partial void OnIsBothStandardActiveChanged(bool value)
+    {
+        if (_isUpdating) return;
+        _ = ExecuteBothStandardToggleAsync(value);
+    }
+
+    private async Task ExecuteBothStandardToggleAsync(bool enable)
+    {
+        ClearError();
+        Log.Information("User toggled Both Standard Protection to {Enable}", enable);
+
+        var result = enable
+            ? await _protectionService.EnableStandardProtectionAsync(BlockTarget.Both)
+            : await _protectionService.DisableStandardProtectionAsync(BlockTarget.Both);
+
+        if (!result.Success)
+        {
+            ShowError(result.ErrorMessage ?? "Failed to update Both Standard Protection");
+            await RefreshStateAsync();
+        }
+    }
+
+    [RelayCommand]
+    private async Task ToggleBothSecureAsync()
+    {
+        if (_isUpdating) return;
+        ClearError();
+
+        var state = await _protectionService.GetCurrentStateAsync();
+        var bothSecureActive = state.Camera.SecureState == SecureProtectionState.Active &&
+                               state.Microphone.SecureState == SecureProtectionState.Active;
+
+        var result = bothSecureActive
+            ? await _protectionService.DisableSecureProtectionAsync(BlockTarget.Both)
+            : await _protectionService.EnableSecureProtectionAsync(BlockTarget.Both);
+
+        if (!result.Success)
+        {
+            ShowError(result.ErrorMessage ?? "Both Secure Protection error");
             await RefreshStateAsync();
         }
     }

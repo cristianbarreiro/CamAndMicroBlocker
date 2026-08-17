@@ -49,6 +49,12 @@ public static class LocalizationCatalog
         ["Language"] = "Idioma",
         ["CapabilitiesTitle"] = "Capacidades del Sistema",
 
+        // Unified Control
+        ["UnifiedTitle"] = "Control Unificado",
+        ["UnifiedSubtitle"] = "Controlar cámara y micrófono simultáneamente",
+        ["UnifiedStandardDesc"] = "Proteger ambos dispositivos a la vez",
+        ["UnifiedSecureDesc"] = "Reforzar protección en ambos dispositivos",
+
         // Notifications & Errors
         ["ElevationCancelled"] = "Operación cancelada: Se denegaron los permisos de administrador.",
         ["StandardRequiredFirst"] = "Debes activar la Protección Estándar antes de activar la Protección Segura."
@@ -96,6 +102,12 @@ public static class LocalizationCatalog
         ["StartWithSystem"] = "Start with system",
         ["Language"] = "Language",
         ["CapabilitiesTitle"] = "Platform Capabilities",
+
+        // Unified Control
+        ["UnifiedTitle"] = "Unified Control",
+        ["UnifiedSubtitle"] = "Control camera and microphone simultaneously",
+        ["UnifiedStandardDesc"] = "Protect both devices at once",
+        ["UnifiedSecureDesc"] = "Harden protection on both devices",
 
         // Notifications & Errors
         ["ElevationCancelled"] = "Operation cancelled: Administrator permissions were denied.",
